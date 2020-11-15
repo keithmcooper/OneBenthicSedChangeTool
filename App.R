@@ -925,7 +925,7 @@ order by s.year desc, st.stationcode asc;",
     p <-  ggplot(data = data.scores2, aes(x = NMDS1, y = NMDS2, col=time)) + 
       geom_point(data = data.scores2, size = 1.5, alpha =0.5) +
       scale_colour_manual(values = c("blue","#00CCCC"))+
-      annotate(geom="text", x=0.5, y=1, label=paste("Stress=",stress))+
+      annotate(geom="text", x=0.88, y=1, label=paste("Stress=",stress))+
       facet_wrap(~treatment2)
     print(p)
     
@@ -978,7 +978,7 @@ order by s.year desc, st.stationcode asc;",
     p <-  ggplot(data = data.scores2, aes(x = NMDS1, y = NMDS2, col=time)) + 
       geom_point(data = data.scores2, size = 1.5, alpha =0.5) +
       scale_colour_manual(values = c("blue","#00CCCC"))+
-      annotate(geom="text", x=0.5, y=1, label=paste("Stress=",stress))+
+      annotate(geom="text", x=0.88, y=1, label=paste("Stress=",stress))+
       facet_wrap(~treatment2)
     print(p)
   })
@@ -1529,8 +1529,9 @@ order by s.year desc, st.stationcode asc;",
     simperdf6 <-simperdf5[,c(1,6,7,8,10,9)]#a1, name, ava, avb, diff, cusum
     
     ## Update column names
-    colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","cumsum") 
+    colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","CumSum") 
     simperdf6$Site<-str_trim(simperdf6$Site)
+    #simperdf6$Contribution<- (1-simperdf6$cumsum)*100
     
     ## Subset anosim.reg() where p<0.05 (i.e. the statistically significant results)
     anosim.reg2 <- anosim.reg()
@@ -1730,9 +1731,9 @@ order by s.year desc, st.stationcode asc;",
     
     ## Update column names
     #colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","cumsum")
-    colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","cumsum")
+    colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","CumSum")
     simperdf6$Site<-str_trim(simperdf6$Site)
-    simperdf6$Contribution<- (1-simperdf6$cumsum)*100
+    #simperdf6$Contribution<- (1-simperdf6$cumsum)*100
     
     
     ## Subset anosim.reg() where p<0.05 (i.e. the statistically significant results)
@@ -1938,9 +1939,9 @@ order by s.year desc, st.stationcode asc;",
     
     ## Update column names
     #colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","cumsum")
-    colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","cumsum")
+    colnames(simperdf6) <-c("Site","Sed","Baseline","Monitoring","Diff","CumSum")
     simperdf6$Site<-str_trim(simperdf6$Site)
-    simperdf6$Contribution<- (1-simperdf6$cumsum)*100
+    #simperdf6$Contribution<- (1-simperdf6$cumsum)*100
     
     
     ## Subset anosim.reg() where p<0.05 (i.e. the statistically significant results)
@@ -1961,7 +1962,7 @@ order by s.year desc, st.stationcode asc;",
   output$simpertab.reg <- DT::renderDataTable({
     DT::datatable(simper.reg(), options = list(pageLength = 20,searching = FALSE,paging = FALSE,
                                                language = list(
-                                                 zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','cumsum','Contribution'), digits=1)
+                                                 zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','CumSum'), digits=1)
   })
   
   #__________________________________________________________________________________________
@@ -1970,7 +1971,7 @@ order by s.year desc, st.stationcode asc;",
   output$simpertab.subreg <- DT::renderDataTable({
     DT::datatable(simper.subreg(), options = list(pageLength = 20,searching = FALSE,paging = FALSE,
                                                   language = list(
-                                                    zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','cumsum','Contribution'), digits=1)
+                                                    zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','CumSum'), digits=1)
   })
   #__________________________________________________________________________________________
   #### SITE: SIMPER TABLE ####
@@ -1979,7 +1980,7 @@ order by s.year desc, st.stationcode asc;",
     #DT::datatable(simper.site(), options = list(pageLength = 20))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','cumsum','Contribution'), digits=1)
     DT::datatable(simper.site(), options = list(pageLength = 20,searching = FALSE,paging = FALSE,
                                                 language = list(
-                                                  zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','cumsum','Contribution'), digits=1)
+                                                  zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','CumSum'), digits=1)
   })
   
   #__________________________________________________________________________________________
