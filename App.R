@@ -103,76 +103,43 @@ class(piz)
 #https://opendata.arcgis.com/datasets/4da955de094e475d8d902ee446e38d58_0.geojson
 
 ## Bring in data via API
-
 #agg <- readLines("https://opendata.arcgis.com/datasets/ced5788f014546b0b571e8d29b021166_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #owf <- readLines("https://opendata.arcgis.com/datasets/4da955de094e475d8d902ee446e38d58_0.geojson")%>% paste(collapse = "\n") %>% geojson_sf()
-
 #owf_cab<- readLines("https://opendata.arcgis.com/datasets/c42f90c49f0d44f0997eaa52d692be3d_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #wave <- readLines("https://opendata.arcgis.com/datasets/d9f9dbc0e29b410c87ba544f6082a0d0_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #wave_cab <- readLines("https://opendata.arcgis.com/datasets/00ab10c847fb42a9bef8f0f4644c41ac_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #tidal <- readLines("https://opendata.arcgis.com/datasets/db94124b152641a992d4e8dfa14d59f2_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #tidal_cab <- readLines("https://opendata.arcgis.com/datasets/3e5203ce7daa4ae08690699925668f46_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #R4_chara <- readLines("https://opendata.arcgis.com/datasets/c0e61d8972e4438ab1c39304b7f28608_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #R4_bid <- readLines("https://opendata.arcgis.com/datasets/54dce8a263324a85b36523e31fff20cc_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
-
 #oga <- readLines("https://opendata.arcgis.com/datasets/3c950a2c8186438899f99ced733dd947_0.geojson") %>% paste(collapse = "\n") %>% geojson_sf()
 
-
-
 ## Check classof spatial objects
-
 #class(agg) #"sf"         "data.frame"
-
 #class(owf)#"sf"         "data.frame"
-
 #class(owf_cab)#"sf"         "data.frame"
-
 #class(wave)#"sf"         "data.frame"
-
 #class(wave_cab)#"sf"         "data.frame"
-
 #class(tidal)#"sf"         "data.frame"
-
 #class(tidal_cab)#"sf"         "data.frame"
-
 #class(R4_chara)#"sf"         "data.frame"
-
 #class(R4_bid)#"sf"         "data.frame"
 
-
-
 ## Check CRS of spatial objects
-
 #st_crs(agg) #EPSG: 4326 
-
 #st_crs(owf) #EPSG: 4326 
-
 #st_crs(owf_cab) #EPSG: 4326 
-
 #st_crs(wave) #EPSG: 4326 
-
 #st_crs(wave_cab) #EPSG: 4326 
-
 #st_crs(tidal) #EPSG: 4326 
-
 #st_crs(tidal_cab) #EPSG: 4326 
-
 #st_crs(R4_chara) #EPSG: 4326 
-
 #st_crs(R4_bid) #EPSG: 4326 
 
-
-
 #__________________________________________________________________________________________
-
 #### GET SPATIAL LAYERS FROM OneBenthic - WHERE NO API AVAILABLE (MPAS, O&G, DISP) ####
+
+## Bring in spatial data layers
 mcz <-  st_read(pool, query = "SELECT * FROM spatial.c20190905_offshorempas_wgs84 WHERE site_statu = 'MCZ - Secretary of State';")
 sac <-  st_read(pool, query = "SELECT * FROM spatial.c20190905_offshorempas_wgs84 WHERE site_statu = 'SAC'or site_statu = 'cSAC';")
 ncmpa <-  st_read(pool, query = "SELECT * FROM spatial.c20190905_offshorempas_wgs84 WHERE site_statu = 'NCMPA';")
@@ -235,8 +202,6 @@ st_crs(tidal_cab) <- 4326
 st_crs(R4_chara) <- 4326
 st_crs(R4_bid) <- 4326
 
-
-
 #__________________________________________________________________________________________
 #### MAP LAYERS SOURCE INFO ####
 
@@ -297,110 +262,89 @@ ui <- fluidPage(
     column(6,
            style='border-left: 1px solid grey',
            
-           #__________________________________________________________________________________________
-           #### TAB: DATA BY SURVEY ####
+#__________________________________________________________________________________________
+#### TAB: DATA ####
            
-           tabsetPanel(
-             #######################
-             tabPanel(tags$b("Data"),
+tabsetPanel(
+            tabPanel(tags$b("Data"),
+                     tabsetPanel(
+                                 tabPanel("Baseline",br(),div(DT::dataTableOutput("widebas"),style = 'font-size:85%')),
+                                 tabPanel("Monitoring",br(),div(DT::dataTableOutput("widemon"),style = 'font-size:85%')),
+                                 tabPanel("Matched",br(),div(DT::dataTableOutput("wideall"),style = 'font-size:85%')),
+                                 tabPanel("Treatment",br(),div(DT::dataTableOutput("refst"),style = 'font-size:85%'))
+                                  )
+                      ),
+            tabPanel(tags$b("Results"),
+                     tabsetPanel(
+                                 tabPanel("Region",
+                                            tabsetPanel(
+                                                        tabPanel(em("Line Plots"),br(),plotOutput(outputId = "reg.line", height = 350)),
+                                                        tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumreg"),style = 'font-size:85%')),
+                                                        tabPanel(em("nMDS"),br(),plotOutput(outputId = "nmds", height = 350)),#750
+                                                        tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim"),style = 'font-size:85%')),
+                                                        tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.reg"),style = 'font-size:85%')),
+                                                        tabPanel(em("Change"),br(),plotOutput(outputId = "change.reg", height = 740))
+                                                        )
+                                          ),
+                                  tabPanel("Sub-region",
+                                            tabsetPanel(
+                                                        tabPanel(em("Line Plots"),plotOutput(outputId = "subreg.line", height = 740)),
+                                                        tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumsubreg"),style = 'font-size:85%')),
+                                                        tabPanel(em("nMDS"),plotOutput(outputId = "nmds.subreg", height = 740)),
+                                                        tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim.subreg"),style = 'font-size:85%')),
+                                                        tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.subreg"),style = 'font-size:85%')),
+                                                        tabPanel(em("Change"),plotOutput(outputId = "change.subreg", height = 740))
+                                                        )
+                                            ),
+                                  tabPanel("Site",
+                                            tabsetPanel(
+                                                        tabPanel(em("Line Plots"),plotOutput(outputId = "site.line", height = 740)),
+                                                        tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumsite"),style = 'font-size:85%')),
+                                                        tabPanel(em("nMDS"),plotOutput(outputId = "nmds.site.piz", height = 740)),
+                                                        tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim.site"),style = 'font-size:85%'),h4(br(),style="color:#808080"),actionButton("update","Show results in map")),
+                                                        tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.site"),style = 'font-size:85%')),
+                                                        tabPanel(em("Change"),plotOutput(outputId = "change.site", height = 740))
+                                                        )
+                                          )
+                                )
+                     ),
+            tabPanel(tags$b("About"),
                       tabsetPanel(
-                        ########################
-                        tabPanel("Baseline",br(),div(DT::dataTableOutput("widebas"),style = 'font-size:85%')),
-                        tabPanel("Monitoring",br(),div(DT::dataTableOutput("widemon"),style = 'font-size:85%')),
-                        tabPanel("Matched",br(),div(DT::dataTableOutput("wideall"),style = 'font-size:85%')),
-                        tabPanel("Treatment",br(),div(DT::dataTableOutput("refst"),style = 'font-size:85%'))
-                        #########################
-                      )),
-             ########################
-             
-             #######################
-             tabPanel(tags$b("Results"),
-                      tabsetPanel(
-                        ########################
-                        tabPanel("Region",
-                                 tabsetPanel(
-                                   tabPanel(em("Line Plots"),br(),plotOutput(outputId = "reg.line", height = 350)),
-                                   tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumreg"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS"),br(),plotOutput(outputId = "nmds", height = 350)),#750
-                                   tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim"),style = 'font-size:85%')),
-                                   tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.reg"),style = 'font-size:85%')),
-                                   tabPanel(em("Change"),br(),plotOutput(outputId = "change.reg", height = 750))
-                                 )
-                        ),
-                        tabPanel("Sub-region",
-                                 tabsetPanel(
-                                   tabPanel(em("Line Plots"),plotOutput(outputId = "subreg.line", height = 750)),
-                                   tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumsubreg"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS"),plotOutput(outputId = "nmds.subreg", height = 750)),
-                                   tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim.subreg"),style = 'font-size:85%')),
-                                   tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.subreg"),style = 'font-size:85%')),
-                                   tabPanel(em("Change"),br(),plotOutput(outputId = "change.subreg", height = 750))
-                                 )
-                        ),
-                        tabPanel("Site",
-                                 tabsetPanel(
-                                   tabPanel(em("Line Plots"),plotOutput(outputId = "site.line", height = 750)),
-                                   tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumsite"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS"),plotOutput(outputId = "nmds.site.piz", height = 750)),
-                                   tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim.site"),style = 'font-size:85%'),h4(br(),style="color:#808080"),actionButton("update","Show results in map")),
-                                   tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.site"),style = 'font-size:85%')),
-                                   tabPanel(em("Change"),br(),plotOutput(outputId = "change.site", height = 750))
-                                 )
-                                 #########################
-                        )
-                        ########################
-                      )),
-             
-             tabPanel(tags$b("About"),
-                      tabsetPanel(
-                        tabPanel("Instructions",
-                                 
-                                 h4("App purpose"),"To compare the composition of sediments between an initial baseline survey(s) and subsequent monitoring survey. For example, the app could be used to monitor sediment change within a licensed or marine protected area. Depending on the design of the monitoring programme, analyses are performed at site-specific, sub-regional and regional scales. This tool is designed to look for evidence of statistically significant changes in sediment composition. Note that the",tags$a(href="https://openscience.cefas.co.uk/matool_mhtest/", "OneBenthic M-Test Tool")," can help determine whether sediment changes are likely to be ecologically significant.",br(),br(),
-                                 
-                                 h4("Data"),"The app uses sediment particle size data classified according to the Wentworth scale (i.e. percentages of silt/clay - SC, fine sand - fS, medium sand - mS, coarse sand - cS, fine gravel - fG, medium gravel - mG, coarse gravel - cG). Data come from monitoring programmes and are stored in the",tags$a(href="https://openscience.cefas.co.uk/obdash/", "OneBenthic database."),"The app also uses spatial data polygons (see 'Map Layers' tab) to automatically assign samples to treatment groups (e.g. reference, licensed areas and secondary impact zones).",br(),br(),
-                                 
-                                 h4("How it works"),"Start by selecting the relevant monitoring 'Programme' and associated 'Array' from the drop-down lists. Next identify the 'Baseline' and 'Monitoring' surveys. Use the 'Match' button to remove samples where there isn't both a baseline and a monitoring sample for each station.  Selected samples are shown in the map. Selected data and assigned treatment groups can be viewed under the 'Data' tab on the right of the screen.",
-                                 "Data are analysed in various ways (see below), with results available at different spatial scales (see 'Results' tab).",
-                                 "The", tags$b("Line Plots"),"show the mean and individual sample composition of sediments by treatment group. For clarity, individual samples are not shown in regional line plots.",
-                                 "The",tags$b("Means")," tab shows a table for mean sediment composition by treatment group.",
-                                 "The", tags$b("MDS")," tab shows a series of non-metric multidimensional scaling ordination (nMDS) plots. Each dot represents a sample, with positions reflecting the similarity/dis-similarity in terms of sediment composition. The stress value provides a measure of how well the 2-d plot represents the multidimensional data. Values of <0.1 are considered good.",
-                                 "The", tags$b("ANOSIM")," test  looks for evidence of statistically significant differences between two groups of samples (e.g. baseline vs monitoring). Test outputs include R and p- values. The R value indicates the size of the difference between the two groups, with 0 indicating no difference and 1 a complete difference. A p-value of <0.05 indicates that results are statistically significant. Both R and p-values should be considered when interpreting test results. Note that with large numbers of samples it is possible to find small yet statistically significant results. It is therefore important to consider effect size (the 'so what?' question).  For this reason we generally consider differences to only be of interest where p<0.05 and R>0.1. The app includes a column for 'interpretation' of the ANOSIM results (see below). ANOSIM tests are performed using the R",tags$a(href="
+                                  tabPanel("Instructions",
+                                           h4("App purpose"),"To compare the composition of sediments between an initial baseline survey(s) and subsequent monitoring survey. For example, the app could be used to monitor sediment change within a licensed or marine protected area. Depending on the design of the monitoring programme, analyses are performed at site-specific, sub-regional and regional scales. This tool is designed to look for evidence of statistically significant changes in sediment composition. Note that the",tags$a(href="https://openscience.cefas.co.uk/matool_mhtest/", "OneBenthic M-Test Tool")," can help determine whether sediment changes are likely to be ecologically significant.",br(),br(),
+                                          h4("Data"),"The app uses sediment particle size data classified according to the Wentworth scale (i.e. percentages of silt/clay - SC, fine sand - fS, medium sand - mS, coarse sand - cS, fine gravel - fG, medium gravel - mG, coarse gravel - cG). Data come from monitoring programmes and are stored in the",tags$a(href="https://openscience.cefas.co.uk/obdash/", "OneBenthic database."),"The app also uses spatial data polygons (see 'Map Layers' tab) to automatically assign samples to treatment groups (e.g. reference, licensed areas and secondary impact zones).",br(),br(),h4("How it works"),"Start by selecting the relevant monitoring 'Programme' and associated 'Array' from the drop-down lists. Next identify the 'Baseline' and 'Monitoring' surveys. Use the 'Match' button to remove samples where there isn't both a baseline and a monitoring sample for each station.  Selected samples are shown in the map. Selected data and assigned treatment groups can be viewed under the 'Data' tab on the right of the screen.","Data are analysed in various ways (see below), with results available at different spatial scales (see 'Results' tab).","The", tags$b("Line Plots"),"show the mean and individual sample composition of sediments by treatment group. For clarity, individual samples are not shown in regional line plots.","The",tags$b("Means")," tab shows a table for mean sediment composition by treatment group.","The", tags$b("MDS")," tab shows a series of non-metric multidimensional scaling ordination (nMDS) plots. Each dot represents a sample, with positions reflecting the similarity/dis-similarity in terms of sediment composition. The stress value provides a measure of how well the 2-d plot represents the multidimensional data. Values of <0.1 are considered good.","The", tags$b("ANOSIM")," test  looks for evidence of statistically significant differences between two groups of samples (e.g. baseline vs monitoring). Test outputs include R and p- values. The R value indicates the size of the difference between the two groups, with 0 indicating no difference and 1 a complete difference. A p-value of <0.05 indicates that results are statistically significant. Both R and p-values should be considered when interpreting test results. Note that with large numbers of samples it is possible to find small yet statistically significant results. It is therefore important to consider effect size (the 'so what?' question).  For this reason we generally consider differences to only be of interest where p<0.05 and R>0.1. The app includes a column for 'interpretation' of the ANOSIM results (see below). ANOSIM tests are performed using the R",tags$a(href="
 https://CRAN.R-project.org/package=vegan", "vegan package."),br(),br(),
                                  "p>0.05 = 'no evidence of change'",br(),
                                  "p<0.05, R<0.1 = 'similar'",br(),
                                  "p<0.05, R>0.1 <0.25 = 'similar with some differences (or high overlap)'",br(),
-                                 "p<0.05, R>0.5 <0.75 = 'different'",br(),
                                  "p<0.05, R>0.25 <0.5 = 'different with some overlap'",br(),
+                                 "p<0.05, R>0.5 <0.75 = 'different'",br(),
                                  "p<0.05, R>0.75 <- 'highly different'",br(),br(),
-                                 "Where ANOSIM finds a meaningful difference (i.e. p<0.05, R>0.1) then this is followed up with a SIMPER test to identify which sediment fractions are responsible for the differences. The SIMPER test is carried out using the simper function from (vegan package) based on Euclidean distances.",
-                                 "Finally, under the 'Change' tab, a simple bar chart shows how mean sediment fractions has changed. These plots should be interpreted together with the SIMPER results. Note that analyses only run after clicking on each tab - please be patient.",br(),br(),
-                                 
-                                 h4("Contact"),"For help/advice using the app (or to provide feedback) please get in touch (keith.cooper@cefas.co.uk).",
-                                 
-                                 style = 'font-size:90%'),
-                        tabPanel("Map Layers",br(),DT::dataTableOutput("activitytable"),style = 'font-size:85%'),
-                        tabPanel("Funders",br(),tags$b("OneBenthic"),"apps are free to use but not to run. If you found the app useful then please consider joining existing funders to support the initiative. Thankyou!",br(),(img(src="logos.png",height = 375, width = 750)),style = 'font-size:90%')
-                      )
-                      
-             )
-           )
-    )
-  ))
+                                 "Where ANOSIM finds a meaningful difference (i.e. p<0.05, R>0.1) then this is followed up with a SIMPER test to identify which sediment fractions are responsible for the differences. The SIMPER test is carried out using the simper function from (vegan package) based on Euclidean distances.","Finally, under the 'Change' tab, a simple bar chart shows how mean sediment fractions has changed. These plots should be interpreted together with the SIMPER results. Note that analyses only run after clicking on each tab - please be patient.",br(),br(),
+                                        h4("Contact"),"For help/advice using the app (or to provide feedback) please get in touch (keith.cooper@cefas.co.uk).",style = 'font-size:90%'),
+                                tabPanel("Map Layers",br(),DT::dataTableOutput("activitytable"),style = 'font-size:85%'),
+                                tabPanel("Funders",br(),tags$b("OneBenthic"),"apps are free to use but not to run. If you found the app useful then please consider joining existing funders to support the initiative. Thankyou!",br(),(img(src="logos.png",height = 375, width = 750)),style = 'font-size:90%')
+                                        )
+                                  )
+              )
+    )#tabsetPanel(
+  )#column(6
+)#fluidRow
 #__________________________________________________________________________________________
 #### SERVER FUNCTION ####
 
 server <- function(input, output, session) {
-  #__________________________________________________________________________________________
-  #### TABLE FOR ACTIVITY LAYERS ####
+#__________________________________________________________________________________________
+#### TABLE FOR ACTIVITY LAYERS ####
   
-  output$activitytable <- DT::renderDataTable(
+output$activitytable <- DT::renderDataTable(
     
-    DT::datatable(layer, options = list(pageLength = 9),escape=FALSE)
+DT::datatable(layer, options = list(pageLength = 9),escape=FALSE)
     
-  )
+)
   
-  #__________________________________________________________________________________________    
-  #### INPUT SELECT: 2. ARRAY #### 
+#__________________________________________________________________________________________    
+#### INPUT SELECT: 2. ARRAY #### 
   
   #https://stackoverflow.com/questions/48376156/updating-a-selectinput-based-on-previous-selectinput-under-common-server-functio
   
@@ -408,17 +352,17 @@ server <- function(input, output, session) {
     updateSelectInput(session,'arrayInput',
                       choices=unique(data$stationsubgroup1[data$stationgroup==input$programmeInput]))
   })
-  #__________________________________________________________________________________________
-  #### INPUT SELECT: 3. BASELINE SURVEY #### 
+#__________________________________________________________________________________________
+#### INPUT SELECT: 3. BASELINE SURVEY #### 
   
-  #https://stackoverflow.com/questions/48376156/updating-a-selectinput-based-on-previous-selectinput-under-common-server-functio
+#https://stackoverflow.com/questions/48376156/updating-a-selectinput-based-on-previous-selectinput-under-common-server-functio
   
   observeEvent(input$arrayInput,{
     updateSelectInput(session,'baselineInput',
                       choices=unique(data$surveyname[data$stationsubgroup1==input$arrayInput]))
   })
-  #__________________________________________________________________________________________
-  #### INPUT SELECT: 4. MONITORING SURVEY  #### 
+#__________________________________________________________________________________________
+#### INPUT SELECT: 4. MONITORING SURVEY  #### 
   
   #https://stackoverflow.com/questions/48376156/updating-a-selectinput-based-on-previous-selectinput-under-common-server-functio
   
@@ -426,17 +370,15 @@ server <- function(input, output, session) {
     updateSelectInput(session,'monitoringInput',
                       choices=unique(data$surveyname[data$stationsubgroup1==input$arrayInput]))
   })
-  #__________________________________________________________________________________________
-  #### MAP ####
+#__________________________________________________________________________________________
+#### MAP ####
   
   output$map <- renderLeaflet({
     
-    ## Basic map
+## Basic map
     
-    leaflet() %>%
-      #addProviderTiles(providers$Esri.OceanBasemap,options = providerTileOptions(noWrap = TRUE))%>%
+leaflet() %>%
       
-      ##############################################################################################
     addProviderTiles(providers$Esri.OceanBasemap,options = providerTileOptions(noWrap = TRUE))%>%
       addMouseCoordinates()%>%addLegend(
         
@@ -455,16 +397,10 @@ server <- function(input, output, session) {
       addPolygons(data=owf_cab,color = "#444444", weight = 1, smoothFactor = 0.5,group = "owf_cab",popup = paste0("<b>Name: </b>", owf_cab$name_prop, "<br>","<b>Status: </b>", owf_cab$infra_stat))%>%
       addPolygons(data=R4_chara,color = "#444444", weight = 1, smoothFactor = 0.5,group = "R4_chara",popup = paste0("<b>Name: </b>", R4_chara$name))%>%
       addPolygons(data=R4_bid,color = "#444444", weight = 1, smoothFactor = 0.5,group = "R4_bid",popup = paste0("<b>Name: </b>", R4_bid$name, "<br>","<b>Status: </b>", R4_bid$bidding_ar))%>%
-      ##############################################
-    
-    #addPolygons(data=agg,color = "#444444", weight = 1, smoothFactor = 0.5,group = "agg",popup = paste0("<b>Name: </b>", agg$area_name, "<br>","<b>Number: </b>", agg$area_numbe))%>%
-    
-    #addPolygons(data=siz,color = "#444444", weight = 1, smoothFactor = 0.5,group = "siz",popup = paste0("<b>Name: </b>", siz$area))%>%
-    addPolygons(data=siz,color = "#444444", fillOpacity = 0, weight = 1, smoothFactor = 0.5,group = "agg (SIZ)",popup = paste0("<b>SIZ Area: </b>", siz$area))%>%
+      addPolygons(data=siz,color = "#444444", fillOpacity = 0, weight = 1, smoothFactor = 0.5,group = "agg (SIZ)",popup = paste0("<b>SIZ Area: </b>", siz$area))%>%
       addPolygons(data=ref,color = "#444444", fillOpacity = 0,weight = 1, smoothFactor = 0.5,group = "ref",popup = paste0("<b>Name: </b>", ref$area))%>%
       addPolygons(data=piz,color = "#444444", fillOpacity = 0,weight = 2, smoothFactor = 0.5,group = "agg (PIZ)",popup = paste0("<b>PIZ Area: </b>", piz$area))%>%
-      #################################
-    addPolygons(data=disp,color = "#444444", weight = 1, smoothFactor = 0.5,group = "disp",popup = paste0("<b>Name: </b>", disp$name_, "<br>","<b>Number: </b>", disp$site_))%>%
+      addPolygons(data=disp,color = "#444444", weight = 1, smoothFactor = 0.5,group = "disp",popup = paste0("<b>Name: </b>", disp$name_, "<br>","<b>Number: </b>", disp$site_))%>%
       addPolygons(data=wave,color = "#444444", weight = 1, smoothFactor = 0.5,group = "wave",popup = paste0("<b>Name: </b>", wave$name_prop, "<br>","<b>Status: </b>", wave$inf_status))%>%
       addPolygons(data=wave_cab,color = "#444444", weight = 1, smoothFactor = 0.5,group = "wave_cab",popup = paste0("<b>Name: </b>", wave_cab$name_prop, "<br>","<b>Status: </b>", wave_cab$infra_stat))%>%
       addPolygons(data=tidal,color = "#444444", weight = 1, smoothFactor = 0.5,group = "tidal",popup = paste0("<b>Name: </b>", tidal$name_prop, "<br>","<b>Status: </b>", tidal$inf_statUS))%>%
@@ -475,25 +411,16 @@ server <- function(input, output, session) {
       addPolygons(data=oga,color = "#444444", weight = 1, smoothFactor = 0.5,group = "oga",popup = paste0("<b>Number: </b>", oga$licref, "<br>","<b>Organisation: </b>", oga$licorggrp))%>%
       addLayersControl(
         overlayGroups = c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa"),options = layersControlOptions(collapsed = FALSE))%>%hideGroup(c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa"))%>%
-      
-      
-      
-      
-      #################################################################################################
-    
-    
-    #addCircleMarkers(data=points,~Longitude,~Latitude,color = "grey",radius = 2,stroke = FALSE,fillOpacity = 0.2,popup = paste0("<b>Survey Name: </b>", points$surveyname))%>%
-    
     setView(-3,54.6,zoom=5.5)
     
-    ##########################
+
   })
-  #__________________________________________________________________________________________  
-  #### PLOT BASELINE SURVEY ####
+#__________________________________________________________________________________________  
+#### PLOT BASELINE SURVEY ####
   
   #https://stackoverflow.com/questions/46979328/how-to-make-shiny-leaflet-map-reac-to-change-in-input-value-r
   
-  # Watch for selection of baseline survey 
+# Watch for selection of baseline survey 
   observeEvent(input$baselineInput, {  
     
     # Modify existing map
@@ -515,7 +442,7 @@ server <- function(input, output, session) {
   #__________________________________________________________________________________________  
   #### PLOT MONITORING SURVEY ####
   
-  # Watch for selection of monitoring survey    
+# Watch for selection of monitoring survey    
   observeEvent(input$monitoringInput, {  
     
     # Modify existing map
@@ -534,8 +461,8 @@ server <- function(input, output, session) {
                        stroke = FALSE, fillOpacity = 1
       )
   })
-  #__________________________________________________________________________________________ 
-  #### RETRIEVE DATA FOR SELECTED SURVEYS ####
+#__________________________________________________________________________________________ 
+#### RETRIEVE DATA FOR SELECTED SURVEYS ####
   
   coord <- reactive({
     
@@ -615,90 +542,93 @@ order by s.year desc, st.stationcode asc;",
     
     return(coord4)
   })
-  #__________________________________________________________________________________________    
-  ## BASELINE DATA SUBSET ####
+#__________________________________________________________________________________________    
+## BASELINE DATA SUBSET ####
   selsurbas <- reactive({
     
     a <- subset( coord()[,c(4,5,6,7,11,12)],surveyname %in% input$baselineInput)
     
     return(a)
   })
-  #__________________________________________________________________________________________  
-  ## MONITORING DATA SUBSET ####
+#__________________________________________________________________________________________  
+## MONITORING DATA SUBSET ####
   selsurmon <- reactive({
     b <- subset( coord()[,c(4,5,6,7,11,12)],surveyname %in% input$monitoringInput)
     return(b)
   })
-  #__________________________________________________________________________________________ 
-  #### BASELINE DATA: WIDE FORMAT #### 
+#__________________________________________________________________________________________ 
+#### BASELINE DATA: WIDE FORMAT #### 
   
   long <- reactive({
     long2 <- selsurbas()[,c(1:6)]#stationcode,surveyname,stationlong,stationlat,wwacr,sum
     long3 <- dcast(long2, stationcode+stationlong+ stationlat+surveyname ~ wwacr, value.var="sum")
     long3$time <- "baseline"
+    
     ##Change NA to zero (to allow dor rowsum calculation)
     long3[, 5:11][is.na(long3[, 5:11])] <- 0
     return(long3)
   })
-  #_________________________________________________________________________________________  
-  #### MONITORING DATA: WIDE FORMAT #### 
+#_________________________________________________________________________________________  
+#### MONITORING DATA: WIDE FORMAT #### 
   
   longmon <- reactive({
     longmon2 <- selsurmon()[,c(1:6)]#stationcode,surveyname,stationlong,stationlat,wwacr,sum
     longmon3 <- dcast(longmon2, stationcode+stationlong+ stationlat+surveyname ~ wwacr, value.var="sum")
     longmon3$time <- "monitoring"
-    #######################
+ 
     ##Change NA to zero (to allow dor rowsum calculation)
     longmon3[, 5:11][is.na(longmon3[, 5:11])] <- 0
-    #####################
+
     return(longmon3)
   })
-  #_________________________________________________________________________________________ 
-  #### BASELINE DATA (WIDE): TABLE ####
+#_________________________________________________________________________________________ 
+#### BASELINE DATA (WIDE): TABLE ####
   
   output$widebas <- DT::renderDataTable({
     DT::datatable(long()[,c(1:4,11,8,10,6,7,9,5)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1) 
   })
-  #__________________________________________________________________________________________ 
-  #### MONITORING DATA (WIDE): TABLE ####
+#__________________________________________________________________________________________ 
+#### MONITORING DATA (WIDE): TABLE ####
   
   output$widemon <- DT::renderDataTable({
     DT::datatable(longmon()[,c(1:4,11,8,10,6,7,9,5)],colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 8))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1) #removing [,1:11] will get rid of error message?????
   })
-  #__________________________________________________________________________________________
-  #### ALL DATA: PAIRED SAMPLES #### 
+#__________________________________________________________________________________________
+#### ALL DATA: PAIRED SAMPLES #### 
   
   
   longall <- reactive({
     ## Select only baseline samples where there is a corresponding monitoring sample
     long.paired <- long()%>%
       filter(stationcode %in% longmon()$stationcode)
-    ########################################
+    
+    ## Change baseline survey name to 'Baseline'
     long.paired$surveyname <-"Baseline"
-    ########################################
+    
     ### Select only monitoring samples where there is a corresponding baseline sample
     longmon.paired <- longmon()%>%
       filter(stationcode %in% long()$stationcode)
-    ########################################
+    
+    ## Change monitoring survey name to 'Monitoring'
     longmon.paired$surveyname <-"Monitoring"
-    ########################################
+    
     ## Now join the baseline df to the monitoring df
     testab=rbind(long.paired,longmon.paired)
     longall2 <- testab
     
     return(longall2)
   })
-  #_________________________________________________________________________________________  
-  #### ALL DATA: TABLE ####
+#_________________________________________________________________________________________  
+#### ALL DATA: TABLE ####
   
   output$wideall <- DT::renderDataTable({
     
     DT::datatable(longall()[,c(1:4,11,8,10,6,7,9,5)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1)
   })
-  #__________________________________________________________________________________________
-  #### MAP: SHOW PAIRED SAMPLE SITES ####
+#__________________________________________________________________________________________
+#### MAP: SHOW PAIRED SAMPLE SITES ####
   
-  ## wATCH FOR
+  ## Watch for
   observeEvent(input$match , {
     leafletProxy("map") %>%
       
@@ -736,8 +666,8 @@ order by s.year desc, st.stationcode asc;",
     
     #)
   })
-  #__________________________________________________________________________________________
-  #### ASSIGN SAMPLES TO TREATMENT GROUPS ####
+#__________________________________________________________________________________________
+#### ASSIGN SAMPLES TO TREATMENT GROUPS ####
   
   stations <- reactive({
     
@@ -802,25 +732,23 @@ order by s.year desc, st.stationcode asc;",
     
     ## Drop geom column
     st_geometry(stations) <- NULL
-    #####################        
+       
     stations$treatment <- factor(stations$treatment, levels=c("PIZ","SIZ","REF"))
+    
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(stations,'stations.csv', row.names=F)
-    ########################
-    #return(stations_after_ref_removed)
+
     return(stations)
   })
-  #__________________________________________________________________________________________       
-  ### TABLE OF SAMPLES AND THEIR TREATMENT CATEGORIES ####        
+#__________________________________________________________________________________________       
+### TABLE OF SAMPLES AND THEIR TREATMENT CATEGORIES ####        
   
   output$refst <- DT::renderDataTable({
     
-    
-    #DT::datatable(stations()[,c(1:4,12,14:16)], options = list(pageLength = 10))
     DT::datatable(stations()[,c(1:4,11,8,10,6,7,9,5,12,13,14,15,16)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG","Time","Region","Area","Treatment","Treatment2"),options = list(pageLength = 10))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1)
   })
-  #__________________________________________________________________________________________         
-  #### REGION: PREPARE DATA #####
+#__________________________________________________________________________________________         
+#### REGION: PREPARE DATA #####
   
   ## Generate regional data for PIZ, SIZ AND REF
   stations.reg <- reactive({
@@ -829,13 +757,14 @@ order by s.year desc, st.stationcode asc;",
     stations.reg$treatment2 <- stations.reg$treatment
     
     
-    ## Creat new col for treatment3 (concat of site/treatment/time)
+    ## Create new col for treatment3 (concat of site/treatment/time)
     stations.reg$treatment3 <- paste(stations.reg$treatment2, "-", stations.reg$time)
     
     return(stations.reg)
   })
-  #__________________________________________________________________________________________
-  #### SITE: PREPARE DATA #####
+#__________________________________________________________________________________________
+#### SITE: PREPARE DATA #####
+  
   ## Generate regional data for PIZ, SIZ AND REF
   stations.site <- reactive({
     stations.site <- stations()
@@ -898,60 +827,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Perform the NMDS ordination 
     set.seed(123)
-    ord <- metaMDS(data2,k = 3)
-    
-    ## Stress
-    stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
-    
-    ## Now we run the envfit function with our environmental data frame, env.
-    en = envfit(ord, env, permutations = 999, na.rm = TRUE)
-    
-    ## Extract the sample coordinates in the NMDS ordination space
-    data.scores = as.data.frame(scores(ord))
-    
-    #Bind results of ordination to data (so you have access to factors etc)
-    data.scores2 <- cbind(data,data.scores)
-    
-    ## Subset data for Area?
-    data.scores3 <- data.scores2
-    
-    ## Make a df for your subset with coordinates and time
-    data.scores.site = as.data.frame(data.scores3[,c(17:19,12)])
-    
-    ## Produce plot
-    en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
-    
-    
-    p <-  ggplot(data = data.scores2, aes(x = NMDS1, y = NMDS2, col=time)) + 
-      geom_point(data = data.scores2, size = 1.5, alpha =0.5) +
-      scale_colour_manual(values = c("blue","#00CCCC"))+
-      annotate(geom="text", x=0.88, y=1, label=paste("Stress=",stress))+
-      facet_wrap(~treatment2)
-    print(p)
-    
-    
-    
-  })
-  #__________________________________________________________________________________________
-  #### SUBREGION: NMDS 2D ####
-  
-  output$nmds.subreg <- renderPlot({
-    
-    library(vegan)
-    
-    ## Start with data in object 'stations4' from STEP 10.
-    data <- stations.subreg()
-    data$time <- as.factor(data$time)
-    
-    ## Seperate out sieve data for ordination. Make sure values are numeric
-    data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-    
-    ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-    
-    ## Perform the NMDS ordination 
-    set.seed(123)
-    ord <- metaMDS(data2,k = 3)
+    ord <- metaMDS(data2,distance="eu",k = 2)
     
     ## Stress
     stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
@@ -981,6 +857,57 @@ order by s.year desc, st.stationcode asc;",
       annotate(geom="text", x=0.88, y=1, label=paste("Stress=",stress))+
       facet_wrap(~treatment2)
     print(p)
+ 
+    
+  })
+  #__________________________________________________________________________________________
+  #### SUBREGION: NMDS 2D ####
+  
+  output$nmds.subreg <- renderPlot({
+    
+    library(vegan)
+    
+    ## Start with data in object 'stations4' from STEP 10.
+    data <- stations.subreg()
+    data$time <- as.factor(data$time)
+    
+    ## Seperate out sieve data for ordination. Make sure values are numeric
+    data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    
+    ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
+    env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    
+    ## Perform the NMDS ordination 
+    set.seed(123)
+    ord <- metaMDS(data2,distance="eu",k = 2)
+    
+    ## Stress
+    stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
+    
+    ## Now we run the envfit function with our environmental data frame, env.
+    en = envfit(ord, env, permutations = 999, na.rm = TRUE)
+    
+    ## Extract the sample coordinates in the NMDS ordination space
+    data.scores = as.data.frame(scores(ord))
+    
+    ##Bind results of ordination to data (so you have access to factors etc)
+    data.scores2 <- cbind(data,data.scores)
+    
+    ## Subset data for Area?
+    data.scores3 <- data.scores2
+    
+    ## Make a df for your subset with coordinates and time
+    data.scores.site = as.data.frame(data.scores3[,c(17:19,12)])
+    
+    ## Produce plot
+    en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
+    
+    p <-  ggplot(data = data.scores2, aes(x = NMDS1, y = NMDS2, col=time)) + 
+          geom_point(data = data.scores2, size = 1.5, alpha =0.5) +
+          scale_colour_manual(values = c("blue","#00CCCC"))+
+          annotate(geom="text", x=0.88, y=1, label=paste("Stress=",stress))+
+          facet_wrap(~treatment2)
+    print(p)
   })
   #__________________________________________________________________________________________
   #### SITE: NMDS 2D ####
@@ -1001,7 +928,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Perform the NMDS ordination 
     set.seed(123)
-    ord <- metaMDS(data2,k = 3)
+    ord <- metaMDS(data2,distance="eu",k = 2)
     
     ## Stress
     stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
@@ -1032,8 +959,8 @@ order by s.year desc, st.stationcode asc;",
     print(p)
   })
   
-  #__________________________________________________________________________________________
-  #### REGION: PIZ NMDS 3D ####
+#__________________________________________________________________________________________
+#### REGION: PIZ NMDS 3D ####
   
   output$nmds3dpiz <- renderPlotly({
     library(vegan)
@@ -1072,8 +999,8 @@ order by s.year desc, st.stationcode asc;",
                                                zaxis = list(title = 'NMDS3')))
     print(fig.piz)
   })
-  #__________________________________________________________________________________________
-  #### REGION: SIZ NMDS 3D ####
+#__________________________________________________________________________________________
+#### REGION: SIZ NMDS 3D ####
   
   output$nmds3dsiz <- renderPlotly({
     library(vegan)
@@ -1155,8 +1082,8 @@ order by s.year desc, st.stationcode asc;",
     print(fig.ref)
   })      
   
-  #__________________________________________________________________________________________
-  #### REGION: ANOSIM ####
+#__________________________________________________________________________________________
+#### REGION: ANOSIM ####
   
   anosim.reg <- reactive({
     
@@ -1211,8 +1138,8 @@ order by s.year desc, st.stationcode asc;",
     
     return(anosim.res)
   })
-  #__________________________________________________________________________________________      
-  #### SUBREGION: ANOSIM ####
+#__________________________________________________________________________________________      
+#### SUBREGION: ANOSIM ####
   anosim.subreg <- reactive({
     
     ## Pick off site variable
@@ -1266,8 +1193,8 @@ order by s.year desc, st.stationcode asc;",
     
     return(anosim.res)
   })
-  #__________________________________________________________________________________________ 
-  #### SITE: ANOSIM ####
+#__________________________________________________________________________________________ 
+#### SITE: ANOSIM ####
   
   anosim.site <- reactive({
     
@@ -1317,26 +1244,25 @@ order by s.year desc, st.stationcode asc;",
     anosim.site$interpretation[anosim.site$interpretation>0.25 & anosim.site$interpretation<0.5] <- "different with some overlap"
     anosim.site$interpretation[anosim.site$interpretation>0.1 & anosim.site$interpretation<0.25] <- "similar with some differences (or high overlap)"
     anosim.site$interpretation[anosim.site$interpretation<0.1] <- "similar"
-    
     anosim.site$interpretation[anosim.site$p >0.05] <- "no evidence of change (p>0.05)" 
     
     return(anosim.site)
     #return(anosim.site2)
   })
-  #__________________________________________________________________________________________
-  #### REGION: ANOSIM TABLE ####
+#__________________________________________________________________________________________
+#### REGION: ANOSIM TABLE ####
   
   output$anosim <- DT::renderDataTable({
     DT::datatable(anosim.reg(), colnames=c("Site","R","p","Interpretation"),options = list(pageLength = 8))%>%formatRound(columns=c('R', 'p'), digits=3)%>%formatStyle('interpretation',backgroundColor=styleEqual(c("highly different","different","different with some overlap","similar with some differences (or high overlap)","similar","no evidence of change (p>0.05)"),c('#cc3232','#db7b2b','#e7b416','#99c140','#2dc937','#2dc937')))
   })
-  #__________________________________________________________________________________________
-  #### SUBREGION: ANOSIM TABLE ####
+#__________________________________________________________________________________________
+#### SUBREGION: ANOSIM TABLE ####
   
   output$anosim.subreg <- DT::renderDataTable({
     DT::datatable(anosim.subreg(), colnames=c("Site","R","p","Interpretation"),options = list(pageLength = 20))%>%formatRound(columns=c('R', 'p'), digits=3)%>%formatStyle('interpretation',backgroundColor=styleEqual(c("highly different","different","different with some overlap","similar with some differences (or high overlap)","similar","no evidence of change (p>0.05)"),c('#cc3232','#db7b2b','#e7b416','#99c140','#2dc937','#2dc937')))
   })
-  #__________________________________________________________________________________________
-  #### SITE: ANOSIM TABLE ####
+#__________________________________________________________________________________________
+#### SITE: ANOSIM TABLE ####
   
   output$anosim.site <- DT::renderDataTable({
     
@@ -1344,8 +1270,8 @@ order by s.year desc, st.stationcode asc;",
     DT::datatable(anosim.site(), colnames=c("Site","R","p","Interpretation"),options = list(pageLength = 15))%>%formatRound(columns=c('R', 'p'), digits=3)%>%formatStyle('interpretation',backgroundColor=styleEqual(c("highly different","different","different with some overlap","similar with some differences (or high overlap)","similar","no evidence of change (p>0.05)"),c('#cc3232','#db7b2b','#e7b416','#99c140','#2dc937','#2dc937')))
     
   })
-  #__________________________________________________________________________________________
-  #### REGION: SIMPER ####
+#__________________________________________________________________________________________
+#### REGION: SIMPER ####
   
   simper.reg <- reactive({
     
@@ -1546,8 +1472,8 @@ order by s.year desc, st.stationcode asc;",
     
     return(simperdf7)
   })
-  #__________________________________________________________________________________________
-  #### SUBREGION: SIMPER ####
+#__________________________________________________________________________________________
+#### SUBREGION: SIMPER ####
   
   simper.subreg <- reactive({
     
@@ -1750,9 +1676,8 @@ order by s.year desc, st.stationcode asc;",
     
     return(simperdf7)
   })
-  #__________________________________________________________________________________________
-  
-  #### SITE: SIMPER ####
+#__________________________________________________________________________________________
+#### SITE: SIMPER ####
   
   simper.site <- reactive({
     
@@ -1956,8 +1881,8 @@ order by s.year desc, st.stationcode asc;",
     
     return(simperdf7)
   })
-  #__________________________________________________________________________________________
-  #### REGION: SIMPER TABLE ####
+#__________________________________________________________________________________________
+#### REGION: SIMPER TABLE ####
   
   output$simpertab.reg <- DT::renderDataTable({
     DT::datatable(simper.reg(), options = list(pageLength = 20,searching = FALSE,paging = FALSE,
@@ -1965,16 +1890,16 @@ order by s.year desc, st.stationcode asc;",
                                                  zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','CumSum'), digits=1)
   })
   
-  #__________________________________________________________________________________________
-  #### SUBREGION: SIMPER TABLE ####
+#__________________________________________________________________________________________
+#### SUBREGION: SIMPER TABLE ####
   
   output$simpertab.subreg <- DT::renderDataTable({
     DT::datatable(simper.subreg(), options = list(pageLength = 20,searching = FALSE,paging = FALSE,
                                                   language = list(
                                                     zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','CumSum'), digits=1)
   })
-  #__________________________________________________________________________________________
-  #### SITE: SIMPER TABLE ####
+#__________________________________________________________________________________________
+#### SITE: SIMPER TABLE ####
   
   output$simpertab.site <- DT::renderDataTable({
     #DT::datatable(simper.site(), options = list(pageLength = 20))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','cumsum','Contribution'), digits=1)
@@ -1983,8 +1908,8 @@ order by s.year desc, st.stationcode asc;",
                                                   zeroRecords = "Not relevant given Anosim found no meaningful differences")))%>%formatRound(columns=c('Baseline', 'Monitoring','Diff','CumSum'), digits=1)
   })
   
-  #__________________________________________________________________________________________
-  #### REGION: MEANS DATA #### 
+#__________________________________________________________________________________________
+#### REGION: MEANS DATA #### 
   sed.sum.reg <- reactive({ 
     sumdata=stations.reg()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
       # group_by(surveyname,treatment,treatment2,area) %>%
@@ -2003,8 +1928,8 @@ order by s.year desc, st.stationcode asc;",
     sumdata2 <- sumdata[order(sumdata$treatment ),]
     return(sumdata2)
   })
-  #__________________________________________________________________________________________
-  #### SUBREGION: MEANS DATA #### 
+#__________________________________________________________________________________________
+#### SUBREGION: MEANS DATA #### 
   sed.sum.subreg <- reactive({ 
     sumdata=stations.subreg()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
       # group_by(surveyname,treatment,treatment2,area) %>%
@@ -2023,8 +1948,8 @@ order by s.year desc, st.stationcode asc;",
     sumdata2 <- sumdata[order(sumdata$treatment2 ),]
     return(sumdata2)
   })
-  #__________________________________________________________________________________________
-  #### SITE: MEANS DATA #### 
+#__________________________________________________________________________________________
+#### SITE: MEANS DATA #### 
   
   sed.sum.site <- reactive({ 
     sumdata=stations.site()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
@@ -2044,32 +1969,32 @@ order by s.year desc, st.stationcode asc;",
     sumdata2 <- sumdata[order(sumdata$treatment2 ),]
     return(sumdata2)
   })
-  #__________________________________________________________________________________________
-  #### REGION: MEANS DATA TABLE ####      
+#__________________________________________________________________________________________
+#### REGION: MEANS DATA TABLE ####      
   
   output$sedsumreg <- DT::renderDataTable({
     
     DT::datatable(sed.sum.reg(),colnames=c("Survey","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
   })
   
-  #__________________________________________________________________________________________
-  #### SUBEGION: MEANS DATA TABLE ####      
+#__________________________________________________________________________________________
+#### SUBEGION: MEANS DATA TABLE ####      
   
   output$sedsumsubreg <- DT::renderDataTable({
     
     DT::datatable(sed.sum.subreg(), colnames=c("Survey","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
   })
   
-  #__________________________________________________________________________________________ 
-  #### SITE: MEANS DATA TABLE ####     
+#__________________________________________________________________________________________ 
+#### SITE: MEANS DATA TABLE ####     
   
   output$sedsumsite <- DT::renderDataTable({
     
     DT::datatable(sed.sum.site(),colnames=c("Survey","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
   })
   
-  #__________________________________________________________________________________________
-  #### REGION: MEANS DIFF #### 
+#__________________________________________________________________________________________
+#### REGION: MEANS DIFF #### 
   
   sed.sum.reg.diff <- reactive({ 
     
@@ -2114,8 +2039,8 @@ order by s.year desc, st.stationcode asc;",
     write.csv(data.diff5,'data.diff5.csv', row.names=F)
     return(data.diff5)
   })
-  #__________________________________________________________________________________________ 
-  #### SUBREGION: MEANS DIFF #### 
+#__________________________________________________________________________________________ 
+#### SUBREGION: MEANS DIFF #### 
   
   sed.sum.subreg.diff <- reactive({ 
     
@@ -2205,29 +2130,28 @@ order by s.year desc, st.stationcode asc;",
     #write.csv(data.diff5,'data.diff5.csv', row.names=F)
     return(data.diff5)
   })
-  #__________________________________________________________________________________________  
-  #### REGION: MEANS DIFF TABLE #### 
+#__________________________________________________________________________________________  
+#### REGION: MEANS DIFF TABLE #### 
   
   output$sedsumregdiff <- DT::renderDataTable({
     
     DT::datatable(sed.sum.reg.diff(), options = list(pageLength = 3))%>%formatRound(columns=c('SC_diff','fS_diff','mS_diff','cS_diff','fG_diff','mG_diff','cG_diff'), digits=1)
   })
-  #__________________________________________________________________________________________
-  #### SUBREGION: MEANS DIFF TABLE #### 
+#__________________________________________________________________________________________
+#### SUBREGION: MEANS DIFF TABLE #### 
   
   output$sedsumsubregdiff <- DT::renderDataTable({
     
     DT::datatable(sed.sum.subreg.diff(), options = list(pageLength = 3))%>%formatRound(columns=c('SC_diff','fS_diff','mS_diff','cS_diff','fG_diff','mG_diff','cG_diff'), digits=1)
   })
-  #__________________________________________________________________________________________
-  
-  #### SITE: MEANS DIFF TABLE ####     
+#__________________________________________________________________________________________
+#### SITE: MEANS DIFF TABLE ####     
   output$sedsumsitediff <- DT::renderDataTable({
     
     DT::datatable(sed.sum.site.diff(), options = list(pageLength = 3))%>%formatRound(columns=c('SC_diff','fS_diff','mS_diff','cS_diff','fG_diff','mG_diff','cG_diff'), digits=1)
   })
-  #__________________________________________________________________________________________
-  #### REGION: CHANGE PLOTS ####
+#__________________________________________________________________________________________
+#### REGION: CHANGE PLOTS ####
   output$change.reg <- renderPlot({
     
     data <- sed.sum.reg.diff()
@@ -2366,8 +2290,7 @@ order by s.year desc, st.stationcode asc;",
   #__________________________________________________________________________________________
   #### SUBREGION: LINE PLOTS ####
   output$subreg.line <- renderPlot({
-    #rhandsontable(stations7, width = 900, height = 300)
-    #adata <- stations.subreg()[,c(15,12,11,8,10,6,7,9,5,1)]#treatment2, time, SC,fS,mS,cS,fG,mG,cG,stationcode
+    
     adata <- stations.subreg()[,c(16,12,11,8,10,6,7,9,5,1)]#treatment2, time, SC,fS,mS,cS,fG,mG,cG,stationcode
     adata$ID <- seq.int(nrow(adata))
     
@@ -2418,8 +2341,8 @@ order by s.year desc, st.stationcode asc;",
       facet_wrap(~treatment2)#a 
     print(p)
   }) 
-  #__________________________________________________________________________________________     
-  #### SITE: LINE PLOTS ####
+#__________________________________________________________________________________________     
+#### SITE: LINE PLOTS ####
   
   output$site.line <- renderPlot({
     #rhandsontable(stations7, width = 900, height = 300)
@@ -2480,8 +2403,8 @@ order by s.year desc, st.stationcode asc;",
     
     print(p)
   })  
-  #__________________________________________________________________________________________
-  #### PIZ NO EVIDENCE OF CHANGE (p>0.05) ####
+#__________________________________________________________________________________________
+#### PIZ NO EVIDENCE OF CHANGE (p>0.05) ####
   
   piz.no.evid <- reactive({
     ## Pick off sites where not sig (i.e.p>0.05)
@@ -2561,10 +2484,8 @@ order by s.year desc, st.stationcode asc;",
     refwithnochange <- subset(ref, area %in% testns4ref)
     return(refwithnochange)
   })
-  
-  #__________________________________________________________________________________________
-  
-  #### PIZ SIMILAR (p<0.05, R<0.1) ####
+#__________________________________________________________________________________________
+#### PIZ SIMILAR (p<0.05, R<0.1) ####
   
   piz.sim <- reactive({
     ## Pick off sites where not sig (i.e.p>0.05)
@@ -2819,9 +2740,8 @@ order by s.year desc, st.stationcode asc;",
     refwithnochange <- subset(ref, area %in% testns4ref)
     return(refwithnochange)
   })
-  #__________________________________________________________________________________________
-  #############################################################################################################################
-  #### PIZ DIFF (p<0.05, R>0.5<0.75) ####
+#__________________________________________________________________________________________
+ #### PIZ DIFF (p<0.05, R>0.5<0.75) ####
   
   
   piz.diff <- reactive({
