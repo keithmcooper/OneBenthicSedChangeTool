@@ -258,13 +258,6 @@ ui <- fluidPage(
            selectInput(inputId="arrayInput", multiple = F,h4(br(),"2. Array",style="color:#808080"),choices =NULL),
            selectInput(inputId="baselineInput", multiple = T,h4(br(),"3. Baseline",style="color:#808080"),choices =NULL),
            selectInput(inputId="monitoringInput", multiple = T,h4(br(),"4. Monitoring",style="color:#808080"),choices =NULL),
-           #h4(br(),"5. Find matched sites",style="color:#808080"),prettyCheckbox(inputId = "paired",
-           #                                                                     label = "paired",
-           #                                                                     value = FALSE,
-           #                                                                     outline = TRUE,
-           #                                                                     fill = TRUE,
-           #                                                                     bigger = TRUE,
-           #                                                                     status = 'success',width = NULL),br(),
            h4(br(),"5. Use paired samples only",style="color:#808080"),checkboxInput(inputId = "paired",
                                                                                       label = "",
                                                                                       value = FALSE
@@ -295,7 +288,8 @@ ui <- fluidPage(
                                  tabsetPanel(
                                    tabPanel(em("Line Plots"),br(),plotOutput(outputId = "reg.line", height = 350)),
                                    tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumreg"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS"),br(),plotOutput(outputId = "nmds", height = 350)),#750
+                                   tabPanel(em("nMDS 2D"),br(),plotOutput(outputId = "nmds", height = 350)),#750
+                                   
                                    tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim"),style = 'font-size:85%')),
                                    tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.reg"),style = 'font-size:85%')),
                                    tabPanel(em("Change"),br(),plotOutput(outputId = "change.reg", height = 740))
@@ -305,7 +299,8 @@ ui <- fluidPage(
                                  tabsetPanel(
                                    tabPanel(em("Line Plots"),plotOutput(outputId = "subreg.line", height = 740)),
                                    tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumsubreg"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS"),plotOutput(outputId = "nmds.subreg", height = 740)),
+                                   tabPanel(em("nMDS 2D"),plotOutput(outputId = "nmds.subreg", height = 740)),
+                                   
                                    tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim.subreg"),style = 'font-size:85%')),
                                    tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.subreg"),style = 'font-size:85%')),
                                    tabPanel(em("Change"),plotOutput(outputId = "change.subreg", height = 740))
@@ -315,9 +310,9 @@ ui <- fluidPage(
                                  tabsetPanel(
                                    tabPanel(em("Line Plots"),plotOutput(outputId = "site.line", height = 740)),
                                    tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumsite"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS"),plotOutput(outputId = "nmds.site.piz", height = 740)),
+                                   tabPanel(em("nMDS 2D"),plotOutput(outputId = "nmds.site.piz", height = 740)),
+                                   tabPanel(em("nMDS 3D"),plotlyOutput(outputId = "nmds3dsite", height = 740)),
                                    tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim.site"),style = 'font-size:85%'),h4(br(),style="color:#808080"),actionButton("update","Show results in map")),
-                                   #tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.site"),style = 'font-size:85%')),
                                    tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.site"),style = 'font-size:85%')),
                                    tabPanel(em("Change"),plotOutput(outputId = "change.site", height = 740))
                                  )
@@ -409,6 +404,8 @@ server <- function(input, output, session) {
         title = "Samples"
         
       )%>%
+      
+
       addPolygons(data=owf,color = "#444444", weight = 1, smoothFactor = 0.5,group = "owf",popup = paste0("<b>Name: </b>", owf$name_prop, "<br>","<b>Status: </b>", owf$inf_status))%>%
       addPolygons(data=owf_cab,color = "#444444", weight = 1, smoothFactor = 0.5,group = "owf_cab",popup = paste0("<b>Name: </b>", owf_cab$name_prop, "<br>","<b>Status: </b>", owf_cab$infra_stat))%>%
       addPolygons(data=R4_chara,color = "#444444", weight = 1, smoothFactor = 0.5,group = "R4_chara",popup = paste0("<b>Name: </b>", R4_chara$name))%>%
@@ -450,6 +447,7 @@ server <- function(input, output, session) {
                        ~stationlong,
                        ~stationlat,
                        group = "myMarkers1",
+                       popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =3.5,
                        color = "blue",
                        stroke = FALSE, fillOpacity = 1
@@ -472,6 +470,7 @@ server <- function(input, output, session) {
                        ~stationlong,
                        ~stationlat,
                        group = "myMarkers2",
+                       popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =2,
                        color = "#00CCCC",
                        stroke = FALSE, fillOpacity = 1
@@ -681,6 +680,7 @@ order by s.year desc, st.stationcode asc;",
                        ~stationlong,
                        ~stationlat,
                        group = "myMarkers3",
+                       popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =3.5,
                        color = "blue",
                        stroke = FALSE, fillOpacity = 1)%>%
@@ -689,6 +689,7 @@ order by s.year desc, st.stationcode asc;",
                        ~stationlong,
                        ~stationlat,
                        group = "myMarkers4",
+                       popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =2,
                        color = "#00CCCC",
                        stroke = FALSE, fillOpacity = 1)#%>%addLegend(
@@ -798,6 +799,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Create new col for treatment3 (concat of site/treatment/time)
     stations.reg$treatment3 <- paste(stations.reg$treatment2, "-", stations.reg$time)
+    write.csv(stations.reg,'stations_reg.csv', row.names=F)  
     
     return(stations.reg)
   })
@@ -810,8 +812,8 @@ order by s.year desc, st.stationcode asc;",
     
     ## Create new col for treatment3 (concat of site/treatment/time)
     stations.site$treatment3 <- paste(stations.site$treatment2, "$", stations.site$time)
-    setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
-    write.csv(stations.site,'stations.site.csv', row.names=F)  
+    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(stations.site,'stations.site.csv', row.names=F)  
     return(stations.site)
   })
   #__________________________________________________________________________________________
@@ -843,8 +845,8 @@ order by s.year desc, st.stationcode asc;",
     }
     ## Create new col for treatment3 (concat of site/treatment/time)
     stations6$treatment3 <- paste(stations6$treatment2, "$", stations6$time)
-    setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
-    write.csv(stations6,'stations6.csv', row.names=F)      
+    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(stations6,'stations6.csv', row.names=F)      
     return(stations6)
   })
   #__________________________________________________________________________________________
@@ -991,7 +993,7 @@ order by s.year desc, st.stationcode asc;",
     en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
     
     p <-  ggplot(data = data.scores2, aes(x = NMDS1, y = NMDS2, col=time)) + 
-      geom_point(data = data.scores2, size = 1.5, alpha =0.5) +
+      geom_point(data = data.scores2, size = 1.5, alpha =0.4) +
       scale_colour_manual(values = c("blue","#00CCCC"))+
       #annotate(geom="text", x=0.5, y=1, label=paste("Stress=",stress))+
       facet_wrap(~treatment2)
@@ -999,128 +1001,57 @@ order by s.year desc, st.stationcode asc;",
   })
   
   #__________________________________________________________________________________________
-  #### REGION: PIZ NMDS 3D ####
+  #### SITE: NMDS 3D ####
   
-  #output$nmds3dpiz <- renderPlotly({
-    #library(vegan)
+  output$nmds3dsite <- renderPlotly({
+    library(vegan)
     
     ## Start with data in object 'stations4' from STEP 10.
     #data <- stations.reg()
-    #data$time <- as.factor(data$time)
-    
+    data <- stations.site()#today
+    data$time <- as.factor(data$time)
+    data$treatment3 <- factor(data$treatment3)
+    data$area <- as.factor(data$area)
+
     ## Seperate out sieve data for ordination. Make sure values are numeric
-    #data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Perform the NMDS ordination 
-    #set.seed(123)
-    #ord <- metaMDS(data2,k = 3)
+    set.seed(123)
+    ord <- metaMDS(data2,distance="eu",k = 3)
     
     ## Now we run the envfit function with our environmental data frame, env.
-    #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
+    en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
-    #data.scores = as.data.frame(scores(ord))
+    data.scores = as.data.frame(scores(ord))
     
     ##Bind results of ordination to data (so you have access to factors etc)
-    #data.scores2 <- cbind(data,data.scores)
+    data.scores2 <- cbind(data,data.scores)
     
     ## Subset data for PIZ
-    #data.piz <- data.scores2[which(data.scores2$treatment2=='PIZ'),]
+   # data.piz <- data.scores2[which(data.scores2$treatment2=='PIZ'),]#today
+    data.piz <- data.scores2
+    
+    ## Number of levels in treatment3
+    treat3nlevs <- nlevels(data.piz$treatment3)
+    
+    ## Colour pattern replicated by no. of treatment3 levels divided by 2
+    cols <- rep(c('blue','#00CCCC'), (treat3nlevs/2))
     
     ## Plot
-    #fig.piz <- plot_ly(data.piz, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~time,colors = c('blue','orange'))
-    #fig.piz <- fig.piz %>% add_markers()
-    #fig.piz <- fig.piz %>% layout(scene = list(xaxis = list(title = 'NMDS1'),
-     #                                          yaxis = list(title = 'NMDS2'),
-     #                                          zaxis = list(title = 'NMDS3')))
-    #print(fig.piz)
-  #})
-  #__________________________________________________________________________________________
-  #### REGION: SIZ NMDS 3D ####
-  
- # output$nmds3dsiz <- renderPlotly({
-    #library(vegan)
-    
-    ## Start with data in object 'stations4' from STEP 10.
-    #data <- stations.reg()
-    #data$time <- as.factor(data$time)
-    
-    ## Seperate out sieve data for ordination. Make sure values are numeric
-    #data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-    
-    ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-    
-    ## Perform the NMDS ordination 
-    #set.seed(123)
-    #ord <- metaMDS(data2,k = 3)
-    
-    ## Now we run the envfit function with our environmental data frame, env.
-    #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
-    
-    ## Extract the sample coordinates in the NMDS ordination space
-    #data.scores = as.data.frame(scores(ord))
-    
-    ##Bind results of ordination to data (so you have access to factors etc)
-    #data.scores2 <- cbind(data,data.scores)
-    
-    ## Subset data for SIZ
-   # data.siz <- data.scores2[which(data.scores2$treatment2=='SIZ'),]
-    
-    ## Plot
-    #fig.siz <- plot_ly(data.siz, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~time,colors = c('blue','orange'))
-    #fig.siz <- fig.siz %>% add_markers()
-    #fig.siz <- fig.siz %>% layout(scene = list(xaxis = list(title = 'NMDS1'),
-    #                                           yaxis = list(title = 'NMDS2'),
-    #                                           zaxis = list(title = 'NMDS3')))
-    #print(fig.siz)
-    
-  #})      
-  
-  #__________________________________________________________________________________________
-  #### REGION NMDS 3D: REF ####
-  
-  #output$nmds3dref <- renderPlotly({
-    #library(vegan)
-    
-    ## Start with data in object 'stations4' from STEP 10.
-    #data <- stations.reg()
-    #data$time <- as.factor(data$time)
-    
-    ## Seperate out sieve data for ordination. Make sure values are numeric
-    #data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-    
-    ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-    
-    ## Perform the NMDS ordination 
-    #set.seed(123)
-    #ord <- metaMDS(data2,k = 3)
-    
-    ## Now we run the envfit function with our environmental data frame, env.
-    #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
-    
-    ## Extract the sample coordinates in the NMDS ordination space
-    #data.scores = as.data.frame(scores(ord))
-    
-    #Bind results of ordination to data (so you have access to factors etc)
-    #data.scores2 <- cbind(data,data.scores)
-    
-    ## Subset data for REF
-    #data.ref <- data.scores2[which(data.scores2$treatment2=='REF'),]
-    
-    ## Plot 
-    #fig.ref <- plot_ly(data.ref, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~time,colors = c('blue','orange'))
-    #fig.ref <- fig.ref %>% add_markers(marker=list(sizeref=0.1))
-    #fig.ref <- fig.ref %>% layout(scene = list(xaxis = list(title = 'NMDS1'),
-     #                                          yaxis = list(title = 'NMDS2'),
-     #                                          zaxis = list(title = 'NMDS3')))
-    #print(fig.ref)
-  #})      
-  
+   # fig.piz <- plot_ly(data.piz, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~treatment3,colors =cols)
+    fig.piz <- plot_ly(data.piz, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~treatment3,colors =cols,text = ~paste('Station Code: ', stationcode))
+    fig.piz <- fig.piz %>% add_markers()
+    fig.piz <- fig.piz %>% layout(scene = list(xaxis = list(title = 'NMDS1'),
+                                               yaxis = list(title = 'NMDS2'),
+                                               zaxis = list(title = 'NMDS3')))
+    print(fig.piz)
+  })
+
   #__________________________________________________________________________________________
   #### REGION: ANOSIM ####
   
@@ -2078,8 +2009,8 @@ order by s.year desc, st.stationcode asc;",
     ##################################
     data.diff5 <- data.diff4[which(data.diff4$surveyname == "Monitoring"),]
     #########################################
-    setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
-    write.csv(data.diff5,'data.diff5.csv', row.names=F)
+    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(data.diff5,'data.diff5.csv', row.names=F)
     return(data.diff5)
   })
   #__________________________________________________________________________________________ 
@@ -2905,6 +2836,7 @@ order by s.year desc, st.stationcode asc;",
                        ~stationlong,
                        ~stationlat,
                        #group = "myMarkers3",
+                       popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =2.5,#3.5
                        color = "blue",
                        stroke = FALSE, fillOpacity = 1)%>%
@@ -2913,6 +2845,7 @@ order by s.year desc, st.stationcode asc;",
                        ~stationlong,
                        ~stationlat,
                        #group = "myMarkers4",
+                       popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =1,#2
                        color = "#00CCCC",
                        stroke = FALSE, fillOpacity = 1)
