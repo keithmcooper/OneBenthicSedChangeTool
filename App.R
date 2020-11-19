@@ -555,6 +555,10 @@ order by s.year desc, st.stationcode asc;",
     #colnames(coord4)[18] <- "WaterDepth"
     #colnames(coord4)[19] <- "SampleSize"
     
+    ## Remove rows with cobbles
+    coord4 = filter(coord4, !(wwacr %in% "Co"))
+    # setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(coord4,'coord4.csv', row.names=F)
     return(coord4)
   })
   #__________________________________________________________________________________________    
@@ -600,13 +604,13 @@ order by s.year desc, st.stationcode asc;",
   #### BASELINE DATA (WIDE): TABLE ####
   
   output$widebas <- DT::renderDataTable({
-    DT::datatable(long()[,c(1:4,11,8,10,6,7,9,5)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1) 
+    DT::datatable(long()[,c(1:4,11,8,10,6,7,9,5)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c("cG", "mG","fG","cS","mS","fS","SC"), digits=1) 
   })
   #__________________________________________________________________________________________ 
   #### MONITORING DATA (WIDE): TABLE ####
   
   output$widemon <- DT::renderDataTable({
-    DT::datatable(longmon()[,c(1:4,11,8,10,6,7,9,5)],colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 8))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1) #removing [,1:11] will get rid of error message?????
+    DT::datatable(longmon()[,c(1:4,11,8,10,6,7,9,5)],colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 8))%>%formatRound(columns=c("cG", "mG","fG","cS","mS","fS","SC"), digits=1) #removing [,1:11] will get rid of error message?????
   })
   
   #__________________________________________________________________________________________
@@ -643,11 +647,13 @@ order by s.year desc, st.stationcode asc;",
     
     df2<- longall() %>% 
       
-      #filter(if (input$paired == TRUE) match == TRUE else !is.na(paired))
+      
       filter(if (input$paired == TRUE) match == TRUE else !is.na(match))
-    # setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+   
+    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(df2,'df2.csv', row.names=F)
     df3 <- df2[,1:12]
+    #df3 <- df3[df3$stationcode != "A_0566",]
     return(df3)
     
     
@@ -723,15 +729,35 @@ order by s.year desc, st.stationcode asc;",
     
     ## Split off stations in Ref
     stations_in_ref <- st_join(st_points, ref, join =st_within)
+    
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(stations_in_ref,'stations_in_ref.csv', row.names=F)
-    stations_in_ref2 <- stations_in_ref[!is.na(stations_in_ref$area),]#stations associated with a ref box
-    stations_in_ref2$treatment <- "REF"
-    stations_in_ref2$treatment2 <- paste(stations_in_ref2$area, "-", stations_in_ref2$treatment)
-    #st_geometry(stations_in_ref2) <- NULL
+    
+
+    ## Count number of rows in stations_in_ref
+    count <- nrow(stations_in_ref)
+    
+    ## Count number of samples in a ref site
+   count.na<- sum(is.na(stations_in_ref$area))
+   
+   ## if no ref samples then create an empty df for stations_in_ref2, otherwise subset where area is not NA
+   if(count==count.na){
+     stations_in_ref2 <-stations_in_ref[0,]
+     
+   } else{
+     stations_in_ref2 <- stations_in_ref[!is.na(stations_in_ref$area),]#stations associated with a ref box
+     stations_in_ref2$treatment <- "REF"
+     stations_in_ref2$treatment2 <- paste(stations_in_ref2$area, "-", stations_in_ref2$treatment)
+   }
+    
+    #stations_in_ref2 <- stations_in_ref[!is.na(stations_in_ref$area),]#stations associated with a ref box
+    #stations_in_ref2$treatment <- "REF"
+    #stations_in_ref2$treatment2 <- paste(stations_in_ref2$area, "-", stations_in_ref2$treatment)
+  
     
     ## These are the stations remaining after those in Ref removed
     stations_after_ref_removed <- stations_in_ref[is.na(stations_in_ref$area),]
+
     
     ## Now take out the stations in PIZs. Cols 1:11 are those for st_points
     stations_in_piz <- st_join(stations_after_ref_removed, piz, join =st_within)
@@ -743,7 +769,8 @@ order by s.year desc, st.stationcode asc;",
     stations_in_piz2 <- stations_in_piz[!is.na(stations_in_piz$area),]
     stations_in_piz2$treatment <- "PIZ"
     stations_in_piz2$treatment2 <- paste(stations_in_piz2$area, "-",stations_in_piz2$treatment )
-    
+    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(stations_in_piz2,'stations_in_piz2.csv', row.names=F)
     ## These are the stations not in ref or piz
     stations_siz_and_context <- stations_in_piz[is.na(stations_in_piz$area),]
     
@@ -765,16 +792,18 @@ order by s.year desc, st.stationcode asc;",
     stations_in_context$treatment2 <- paste(stations_in_context$area, "-",stations_in_context$treatment )
     
     ## Now joint outputs together
-    stations <- rbind(stations_in_piz2,stations_in_ref2,stations_in_siz2,stations_in_context)
+    stations <- rbind(stations_in_piz2,stations_in_ref2,stations_in_siz2,stations_in_context)#today
+    #stations <- rbind(stations_in_piz2,stations_in_siz2,stations_in_context)
     
-    ## Creat new col for treatment3 (concat of site/treatment/time)
+    
+    ## Create new col for treatment3 (concat of site/treatment/time)
     #stations$treatment3 <- paste(stations$treatment2, "-", stations$time)
     
     ## Drop geom column
     st_geometry(stations) <- NULL
     
     stations$treatment <- factor(stations$treatment, levels=c("PIZ","SIZ","REF"))
-    
+
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(stations,'stations.csv', row.names=F)
     
