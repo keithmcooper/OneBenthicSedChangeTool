@@ -477,23 +477,22 @@ server <- function(input, output, session) {
       )
   })
   #__________________________________________________________________________________________ 
+  ###################################################################
+  #################################################################
+  
   #### RETRIEVE DATA FOR SELECTED SURVEYS ####
   
   coord <- reactive({
     
-    req(input$arrayInput)
+    #req(input$arrayInput)
     req(input$baselineInput)
     req(input$monitoringInput)
     
     coord2 <- glue::glue_sql(
-      
+      #line 513   where st.stationsubgroup1 IN({arrayname*}) and
       "select
-st.stationgroup,
-st.stationsubgroup1,
 s.year,
 st.stationcode,
-st.stationlong,
-st.stationlat,
 su.surveyname,
 s.samplecode,
 s.samplelong,
@@ -510,13 +509,10 @@ inner join associations.surveysample as susa on susa.sample_samplecode=s.samplec
 inner join associations.survey as su on su.surveyname = susa.survey_surveyname
 inner join sediment_data.sedvar as sedv on sedv.sievesize=sv.sedvar_sievesize
 inner join sediment_data.wentworth as w on w.wwid=sedv.wentworth_id
-where st.stationsubgroup1 IN({arrayname*}) and
 su.surveyname IN ({baselinename*}) or
 su.surveyname IN ({monitoring*})
 
 GROUP BY
-st.stationgroup,
-st.stationsubgroup1,
 s.year,
 st.stationcode,
 st.stationlong,
@@ -529,7 +525,7 @@ w.wwacr
 
 order by s.year desc, st.stationcode asc;",
       
-      arrayname = input$arrayInput,
+      #arrayname = input$arrayInput,
       baselinename = input$baselineInput,
       monitoring = input$monitoringInput,
       .con=pool)
@@ -561,6 +557,94 @@ order by s.year desc, st.stationcode asc;",
     #write.csv(coord4,'coord4.csv', row.names=F)
     return(coord4)
   })
+  #__________________________________________________________________________________________ 
+  ##################################################################
+  #################################################################
+  
+  #### RETRIEVE DATA FOR SELECTED SURVEYS ####
+  
+ # coord <- reactive({
+    
+ #   req(input$arrayInput)
+ #   req(input$baselineInput)
+ #   req(input$monitoringInput)
+    
+ #   coord2 <- glue::glue_sql(
+ 
+#      "select
+#st.stationgroup,
+#st.stationsubgroup1,
+#s.year,
+#st.stationcode,
+#st.stationlong,
+#st.stationlat,
+#su.surveyname,
+#s.samplecode,
+#s.samplelong,
+#s.samplelat,
+#w.wwacr,
+#SUM(sv.percentage) 
+
+#FROM 
+#samples.sample as s
+#inner join sediment_data.sedvarsample as sv on s.samplecode=sv.sample_samplecode
+#inner join associations.samplestation as sst on s.samplecode=sst.sample_samplecode
+#inner join associations.station as st on sst.station_stationcode=st.stationcode
+#inner join associations.surveysample as susa on susa.sample_samplecode=s.samplecode
+#inner join associations.survey as su on su.surveyname = susa.survey_surveyname
+#inner join sediment_data.sedvar as sedv on sedv.sievesize=sv.sedvar_sievesize
+#inner join sediment_data.wentworth as w on w.wwid=sedv.wentworth_id
+#where st.stationsubgroup1 IN({arrayname*}) and
+#su.surveyname IN ({baselinename*}) or
+#su.surveyname IN ({monitoring*})
+
+#GROUP BY
+#st.stationgroup,
+#st.stationsubgroup1,
+#s.year,
+#st.stationcode,
+#st.stationlong,
+#st.stationlat,
+#su.surveyname,
+#s.samplecode,
+#s.samplelong,
+#s.samplelat,
+#w.wwacr
+
+#order by s.year desc, st.stationcode asc;",
+      
+ #     arrayname = input$arrayInput,
+ #     baselinename = input$baselineInput,
+ #     monitoring = input$monitoringInput,
+ #     .con=pool)
+    
+  #  coord3 <- as.data.frame(dbGetQuery(pool, coord2))
+  #  coord4 <- coord3[,]
+    
+    ## Change column names
+    #colnames(coord4)[1] <- "SurveyName"
+    #colnames(coord4)[2] <- "SampleCode"
+    #colnames(coord4)[3] <- "Latitude"
+    #colnames(coord4)[4] <- "Longitude"
+    #colnames(coord4)[5] <- "GearName"
+    #colnames(coord4)[6] <- "Date"
+    #colnames(coord4)[7] <- "MacroSieveSize_mm"
+    #colnames(coord4)[10] <- "ValidName(WoRMS)"
+    #colnames(coord4)[11] <- "Rank"
+    #colnames(coord4)[12] <- "TaxonQualifier"
+    #colnames(coord4)[13] <- "AphiaID"
+    #colnames(coord4)[14] <- "Abund"
+    #colnames(coord4)[16] <- "SampleCode2"
+    #colnames(coord4)[17] <- "DataOwner"
+    #colnames(coord4)[18] <- "WaterDepth"
+    #colnames(coord4)[19] <- "SampleSize"
+    
+    ## Remove rows with cobbles
+ #   coord4 = filter(coord4, !(wwacr %in% "Co"))
+    # setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(coord4,'coord4.csv', row.names=F)
+#    return(coord4)
+#  })
   #__________________________________________________________________________________________    
   ## BASELINE DATA SUBSET ####
   selsurbas <- reactive({
