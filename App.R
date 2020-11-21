@@ -54,36 +54,35 @@ pool <- dbPool(drv = dbDriver("Postgres"), user = "editors_one_benthic@azsclnxgi
 ## SQL query to OneBenthic
 data <- dbGetQuery(pool, 
                    "SELECT
-st.stationcode,
-st.stationlong,
-st.stationlat,
-st.stationgroup,
-st.stationsubgroup1,
-su.surveyname
+s.samplecode,
+su.surveyname,
+s.samplelong,
+s.samplelat
+
 
 FROM
 samples.sample as s
-inner join associations.samplestation as sst on s.samplecode=sst.sample_samplecode
-inner join associations.station as st on sst.station_stationcode=st.stationcode
 inner join associations.surveysample as susa on susa.sample_samplecode=s.samplecode
 inner join associations.survey as su on su.surveyname = susa.survey_surveyname
-WHERE st.stationgroup = 'RSMP';")
-
+;")
+#WHERE st.stationgroup = 'RSMP'
 
 ## Drop down choices for input$inputProgramme
-programme <- sort(unique(data$stationgroup))
-survey <- sort(unique(data$stationsubgroup1))
+#programme <- sort(unique(data$stationgroup))
+#survey <- sort(unique(data$stationsubgroup1))
 surveys <- sort(unique(data$surveyname))
 
 ## Map data
 names(data)
 #points <- unique(data[,c(2:3,4,5,1)])
-points <- unique(data[,c(2:3,4,5,1,6)])
-colnames(points)[1] <- "Longitude"
-colnames(points)[2] <- "Latitude"
-colnames(points)[3] <- "Programme"
-colnames(points)[4] <- "Survey"
-colnames(points)[5] <- "StationCode"
+points <- unique(data[,c(1:4)])
+colnames(points)[1] <- "Samplecode"
+colnames(points)[2] <- "Survey"
+colnames(points)[3] <- "Longitude"
+colnames(points)[4] <- "Latitude"
+
+
+
 
 #__________________________________________________________________________________________
 ## SPATIAL DATA ####
@@ -91,12 +90,11 @@ colnames(points)[5] <- "StationCode"
 ref <- st_read(pool, query = "SELECT region,box as area,geom FROM spatial.ref_box_all;")
 siz<- st_read(pool, query = "SELECT distinct region_name as region,area_numbe as area,geom FROM ap_marine_aggregate.extraction_areas_siz 
 where droped = false;")
-piz <- st_read(pool, query = "SELECT distinct region_name as region,area_numbe as area,geom FROM ap_marine_aggregate.extraction_areas 
-where droped = false;")
+piz <- st_read(pool, query = "SELECT distinct region_name as region,area_numbe as area,geom FROM ap_marine_aggregate.extraction_areas where droped = false;")
 st_crs(piz)<- 4326
 st_crs(siz)<- 4326
 st_crs(ref)<- 4326
-class(piz)
+#View(ref)
 #__________________________________________________________________________________________
 
 #### GET SPATIAL LAYERS VIA API (AGG, OWF, WAVE, TIDE) ####
@@ -157,7 +155,18 @@ tidal <- st_read(pool, query = "SELECT * FROM spatial.offshore_tidal_stream_site
 tidal_cab <- st_read(pool, query = "SELECT * FROM spatial.offshore_tidal_stream_cable_agreements_england_wales__ni_the_cr;")
 R4_chara <- st_read(pool, query = "SELECT * FROM spatial.offshore_wind_leasing_round_4_characterisation_areas_england_wa;")
 R4_bid <- st_read(pool, query = "SELECT * FROM spatial.offshore_wind_leasing_round_4_bidding_areas_england_wales_and_n;")
+###################################
+## Reduce sac to 3 cols (region, area, geom) - same as piz, siz, ref
+sac <- sac[,c(5,3,15)]
+colnames(sac) <- c("region","area","geom")
+sac
 
+## Reduce sac to 3 cols (region, area, geom) - same as piz, siz, ref
+mcz <- mcz[,c(5,3,15)]
+colnames(mcz) <- c("region","area","geom")
+mcz
+
+##########################################
 ## Check class of objects
 #class(mcz)#[1] "sf"         "data.frame"
 #class(sac)#[1] "sf"         "data.frame"
@@ -254,13 +263,13 @@ ui <- fluidPage(
   fluidRow(
     
     column(2,
-           selectInput(inputId="programmeInput",selected = NULL, multiple = F,h4("Select:",br(),br(),"1. Programme",style="color:#808080"),choices =programme),
-           selectInput(inputId="arrayInput", multiple = F,h4(br(),"2. Array",style="color:#808080"),choices =NULL),
-           selectInput(inputId="baselineInput", multiple = T,h4(br(),"3. Baseline",style="color:#808080"),choices =NULL),
-           selectInput(inputId="monitoringInput", multiple = T,h4(br(),"4. Monitoring",style="color:#808080"),choices =NULL),
+           selectInput(inputId="programmeInput",selected = NULL, multiple = F,h4("Select:",br(),br(),"1. Programme",style="color:#808080"),choices =c("RSMP","MCZ","SAC")),
+           #selectInput(inputId="arrayInput", multiple = F,h4(br(),"2. Array",style="color:#808080"),choices =NULL),
+           selectInput(inputId="baselineInput", multiple = T,h4(br(),"3. Baseline",style="color:#808080"),choices =surveys),
+           selectInput(inputId="monitoringInput", multiple = T,h4(br(),"4. Monitoring",style="color:#808080"),choices =surveys),
            h4(br(),"5. Use paired samples only",style="color:#808080"),checkboxInput(inputId = "paired",
-                                                                                      label = "",
-                                                                                      value = FALSE
+                                                                                     label = "",
+                                                                                     value = FALSE
            ),br(),
            numericInput("num", h4(br(),"6. Show Simper results where Anosim p<0.05 and R>",style="color:#808080"), value = 0.1, min = 0.1, max = 1, step=0.05)
     ),
@@ -345,6 +354,50 @@ https://CRAN.R-project.org/package=vegan", "vegan package."),br(),br(),
 #### SERVER FUNCTION ####
 
 server <- function(input, output, session) {
+  
+  #### SELECT SPATIAL LAYERS ####
+  #observeEvent(input$monitoringInput, {
+  test.piz <- reactive({
+    
+    if (input$programmeInput == 'RSMP'){
+      
+      piz <- piz
+    }else if (input$programmeInput == 'MCZ'){
+      piz <-   mcz
+      
+    }else if (input$programmeInput == 'SAC')
+    {piz <- sac}
+    return(piz)
+  })
+  
+  test.ref <- reactive({
+    
+    if (input$programmeInput == 'RSMP'){
+      
+      ref <- ref
+    }else if (input$programmeInput == 'MCZ'){
+      ref <-   ref
+      
+    }else if (input$programmeInput == 'SAC')
+    {ref <- ref}
+    return(ref)
+  })
+  
+  test.siz <- reactive({
+    
+    if (input$programmeInput == 'RSMP'){
+      
+      siz <- siz
+    }else if (input$programmeInput == 'MCZ'){
+      siz <-   siz[0,]
+      
+      
+    }else if (input$programmeInput == 'SAC')
+    {siz <- siz[0,]}
+    return(siz)
+  })
+  #pols <- reactive({
+  # cont.sim[substr(cont.sim@data$gssCode,1,1)==substr(input$countryInput,1,1),]})
   #__________________________________________________________________________________________
   #### TABLE FOR ACTIVITY LAYERS ####
   
@@ -359,28 +412,28 @@ server <- function(input, output, session) {
   
   #https://stackoverflow.com/questions/48376156/updating-a-selectinput-based-on-previous-selectinput-under-common-server-functio
   
-  observeEvent(input$programmeInput,{
-    updateSelectInput(session,'arrayInput',
-                      choices=unique(data$stationsubgroup1[data$stationgroup==input$programmeInput]))
-  })
+  #observeEvent(input$programmeInput,{
+  #  updateSelectInput(session,'arrayInput',
+  #                     choices=unique(data$stationsubgroup1[data$stationgroup==input$programmeInput]))
+  # })
   #__________________________________________________________________________________________
   #### INPUT SELECT: 3. BASELINE SURVEY #### 
   
   #https://stackoverflow.com/questions/48376156/updating-a-selectinput-based-on-previous-selectinput-under-common-server-functio
   
-  observeEvent(input$arrayInput,{
-    updateSelectInput(session,'baselineInput',
-                      choices=unique(data$surveyname[data$stationsubgroup1==input$arrayInput]))
-  })
+  #observeEvent(input$arrayInput,{
+  #  updateSelectInput(session,'baselineInput',
+  #                    choices=unique(data$surveyname[data$stationsubgroup1==input$arrayInput]))
+  #})
   #__________________________________________________________________________________________
   #### INPUT SELECT: 4. MONITORING SURVEY  #### 
   
   #https://stackoverflow.com/questions/48376156/updating-a-selectinput-based-on-previous-selectinput-under-common-server-functio
   
-  observeEvent(input$arrayInput,{
-    updateSelectInput(session,'monitoringInput',
-                      choices=unique(data$surveyname[data$stationsubgroup1==input$arrayInput]))
-  })
+  #observeEvent(input$arrayInput,{
+  #  updateSelectInput(session,'monitoringInput',
+  #                    choices=unique(data$surveyname[data$stationsubgroup1==input$arrayInput]))
+  # })
   #__________________________________________________________________________________________
   #### MAP ####
   
@@ -405,7 +458,7 @@ server <- function(input, output, session) {
         
       )%>%
       
-
+      
       addPolygons(data=owf,color = "#444444", weight = 1, smoothFactor = 0.5,group = "owf",popup = paste0("<b>Name: </b>", owf$name_prop, "<br>","<b>Status: </b>", owf$inf_status))%>%
       addPolygons(data=owf_cab,color = "#444444", weight = 1, smoothFactor = 0.5,group = "owf_cab",popup = paste0("<b>Name: </b>", owf_cab$name_prop, "<br>","<b>Status: </b>", owf_cab$infra_stat))%>%
       addPolygons(data=R4_chara,color = "#444444", weight = 1, smoothFactor = 0.5,group = "R4_chara",popup = paste0("<b>Name: </b>", R4_chara$name))%>%
@@ -421,6 +474,7 @@ server <- function(input, output, session) {
       addPolygons(data=mcz,color = "#ff8b3d", weight = 1, smoothFactor = 0.5,group = "mcz",popup = paste0("<b>Name: </b>", mcz$site_name))%>%
       addPolygons(data=sac,color = "#ff8b3d", weight = 1, smoothFactor = 0.5,group = "sac",popup = paste0("<b>Name: </b>", sac$site_name))%>%
       addPolygons(data=ncmpa,color = "#ff8b3d", weight = 1, smoothFactor = 0.5,group = "ncmpa",popup = paste0("<b>Name: </b>", ncmpa$site_name))%>%
+      #addPolygons(data=test.piz(),color = "red", weight = 5, smoothFactor = 0.5)%>%
       addPolygons(data=oga,color = "#444444", weight = 1, smoothFactor = 0.5,group = "oga",popup = paste0("<b>Number: </b>", oga$licref, "<br>","<b>Organisation: </b>", oga$licorggrp))%>%
       addLayersControl(
         overlayGroups = c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa"),options = layersControlOptions(collapsed = FALSE))%>%hideGroup(c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa"))%>%
@@ -444,10 +498,10 @@ server <- function(input, output, session) {
       
       # Add markers
       addCircleMarkers(data = data[data$surveyname %in% input$baselineInput, ],
-                       ~stationlong,
-                       ~stationlat,
+                       ~samplelong,
+                       ~samplelat,
                        group = "myMarkers1",
-                       popup = ~paste("<b>Station Code: </b>",stationcode),
+                       popup = ~paste("<b>Station Code: </b>",samplecode),
                        radius =3.5,
                        color = "blue",
                        stroke = FALSE, fillOpacity = 1
@@ -467,10 +521,10 @@ server <- function(input, output, session) {
       
       # Add markers
       addCircleMarkers(data = data[data$surveyname %in% input$monitoringInput, ],
-                       ~stationlong,
-                       ~stationlat,
+                       ~samplelong,
+                       ~samplelat,
                        group = "myMarkers2",
-                       popup = ~paste("<b>Station Code: </b>",stationcode),
+                       popup = ~paste("<b>Station Code: </b>",samplecode),
                        radius =2,
                        color = "#00CCCC",
                        stroke = FALSE, fillOpacity = 1
@@ -491,6 +545,7 @@ server <- function(input, output, session) {
     coord2 <- glue::glue_sql(
       #line 513   where st.stationsubgroup1 IN({arrayname*}) and
       "select
+
 s.year,
 st.stationcode,
 su.surveyname,
@@ -503,20 +558,19 @@ SUM(sv.percentage)
 FROM 
 samples.sample as s
 inner join sediment_data.sedvarsample as sv on s.samplecode=sv.sample_samplecode
-inner join associations.samplestation as sst on s.samplecode=sst.sample_samplecode
-inner join associations.station as st on sst.station_stationcode=st.stationcode
+left join associations.samplestation as sst on s.samplecode=sst.sample_samplecode
+left join associations.station as st on sst.station_stationcode=st.stationcode
 inner join associations.surveysample as susa on susa.sample_samplecode=s.samplecode
 inner join associations.survey as su on su.surveyname = susa.survey_surveyname
 inner join sediment_data.sedvar as sedv on sedv.sievesize=sv.sedvar_sievesize
 inner join sediment_data.wentworth as w on w.wwid=sedv.wentworth_id
+where
 su.surveyname IN ({baselinename*}) or
 su.surveyname IN ({monitoring*})
 
 GROUP BY
 s.year,
 st.stationcode,
-st.stationlong,
-st.stationlat,
 su.surveyname,
 s.samplecode,
 s.samplelong,
@@ -533,23 +587,7 @@ order by s.year desc, st.stationcode asc;",
     coord3 <- as.data.frame(dbGetQuery(pool, coord2))
     coord4 <- coord3[,]
     
-    ## Change column names
-    #colnames(coord4)[1] <- "SurveyName"
-    #colnames(coord4)[2] <- "SampleCode"
-    #colnames(coord4)[3] <- "Latitude"
-    #colnames(coord4)[4] <- "Longitude"
-    #colnames(coord4)[5] <- "GearName"
-    #colnames(coord4)[6] <- "Date"
-    #colnames(coord4)[7] <- "MacroSieveSize_mm"
-    #colnames(coord4)[10] <- "ValidName(WoRMS)"
-    #colnames(coord4)[11] <- "Rank"
-    #colnames(coord4)[12] <- "TaxonQualifier"
-    #colnames(coord4)[13] <- "AphiaID"
-    #colnames(coord4)[14] <- "Abund"
-    #colnames(coord4)[16] <- "SampleCode2"
-    #colnames(coord4)[17] <- "DataOwner"
-    #colnames(coord4)[18] <- "WaterDepth"
-    #colnames(coord4)[19] <- "SampleSize"
+    
     
     ## Remove rows with cobbles
     coord4 = filter(coord4, !(wwacr %in% "Co"))
@@ -563,124 +601,131 @@ order by s.year desc, st.stationcode asc;",
   
   #### RETRIEVE DATA FOR SELECTED SURVEYS ####
   
- # coord <- reactive({
-    
- #   req(input$arrayInput)
- #   req(input$baselineInput)
- #   req(input$monitoringInput)
-    
- #   coord2 <- glue::glue_sql(
- 
-#      "select
-#st.stationgroup,
-#st.stationsubgroup1,
-#s.year,
-#st.stationcode,
-#st.stationlong,
-#st.stationlat,
-#su.surveyname,
-#s.samplecode,
-#s.samplelong,
-#s.samplelat,
-#w.wwacr,
-#SUM(sv.percentage) 
-
-#FROM 
-#samples.sample as s
-#inner join sediment_data.sedvarsample as sv on s.samplecode=sv.sample_samplecode
-#inner join associations.samplestation as sst on s.samplecode=sst.sample_samplecode
-#inner join associations.station as st on sst.station_stationcode=st.stationcode
-#inner join associations.surveysample as susa on susa.sample_samplecode=s.samplecode
-#inner join associations.survey as su on su.surveyname = susa.survey_surveyname
-#inner join sediment_data.sedvar as sedv on sedv.sievesize=sv.sedvar_sievesize
-#inner join sediment_data.wentworth as w on w.wwid=sedv.wentworth_id
-#where st.stationsubgroup1 IN({arrayname*}) and
-#su.surveyname IN ({baselinename*}) or
-#su.surveyname IN ({monitoring*})
-
-#GROUP BY
-#st.stationgroup,
-#st.stationsubgroup1,
-#s.year,
-#st.stationcode,
-#st.stationlong,
-#st.stationlat,
-#su.surveyname,
-#s.samplecode,
-#s.samplelong,
-#s.samplelat,
-#w.wwacr
-
-#order by s.year desc, st.stationcode asc;",
-      
- #     arrayname = input$arrayInput,
- #     baselinename = input$baselineInput,
- #     monitoring = input$monitoringInput,
- #     .con=pool)
-    
+  # coord <- reactive({
+  
+  #   req(input$arrayInput)
+  #   req(input$baselineInput)
+  #   req(input$monitoringInput)
+  
+  #   coord2 <- glue::glue_sql(
+  
+  #      "select
+  #st.stationgroup,
+  #st.stationsubgroup1,
+  #s.year,
+  #st.stationcode,
+  #st.stationlong,
+  #st.stationlat,
+  #su.surveyname,
+  #s.samplecode,
+  #s.samplelong,
+  #s.samplelat,
+  #w.wwacr,
+  #SUM(sv.percentage) 
+  
+  #FROM 
+  #samples.sample as s
+  #inner join sediment_data.sedvarsample as sv on s.samplecode=sv.sample_samplecode
+  #inner join associations.samplestation as sst on s.samplecode=sst.sample_samplecode
+  #inner join associations.station as st on sst.station_stationcode=st.stationcode
+  #inner join associations.surveysample as susa on susa.sample_samplecode=s.samplecode
+  #inner join associations.survey as su on su.surveyname = susa.survey_surveyname
+  #inner join sediment_data.sedvar as sedv on sedv.sievesize=sv.sedvar_sievesize
+  #inner join sediment_data.wentworth as w on w.wwid=sedv.wentworth_id
+  #where st.stationsubgroup1 IN({arrayname*}) and
+  #su.surveyname IN ({baselinename*}) or
+  #su.surveyname IN ({monitoring*})
+  
+  #GROUP BY
+  #st.stationgroup,
+  #st.stationsubgroup1,
+  #s.year,
+  #st.stationcode,
+  #st.stationlong,
+  #st.stationlat,
+  #su.surveyname,
+  #s.samplecode,
+  #s.samplelong,
+  #s.samplelat,
+  #w.wwacr
+  
+  #order by s.year desc, st.stationcode asc;",
+  
+  #     arrayname = input$arrayInput,
+  #     baselinename = input$baselineInput,
+  #     monitoring = input$monitoringInput,
+  #     .con=pool)
+  
   #  coord3 <- as.data.frame(dbGetQuery(pool, coord2))
   #  coord4 <- coord3[,]
-    
-    ## Change column names
-    #colnames(coord4)[1] <- "SurveyName"
-    #colnames(coord4)[2] <- "SampleCode"
-    #colnames(coord4)[3] <- "Latitude"
-    #colnames(coord4)[4] <- "Longitude"
-    #colnames(coord4)[5] <- "GearName"
-    #colnames(coord4)[6] <- "Date"
-    #colnames(coord4)[7] <- "MacroSieveSize_mm"
-    #colnames(coord4)[10] <- "ValidName(WoRMS)"
-    #colnames(coord4)[11] <- "Rank"
-    #colnames(coord4)[12] <- "TaxonQualifier"
-    #colnames(coord4)[13] <- "AphiaID"
-    #colnames(coord4)[14] <- "Abund"
-    #colnames(coord4)[16] <- "SampleCode2"
-    #colnames(coord4)[17] <- "DataOwner"
-    #colnames(coord4)[18] <- "WaterDepth"
-    #colnames(coord4)[19] <- "SampleSize"
-    
-    ## Remove rows with cobbles
- #   coord4 = filter(coord4, !(wwacr %in% "Co"))
-    # setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
-    #write.csv(coord4,'coord4.csv', row.names=F)
-#    return(coord4)
-#  })
+  
+  ## Change column names
+  #colnames(coord4)[1] <- "SurveyName"
+  #colnames(coord4)[2] <- "SampleCode"
+  #colnames(coord4)[3] <- "Latitude"
+  #colnames(coord4)[4] <- "Longitude"
+  #colnames(coord4)[5] <- "GearName"
+  #colnames(coord4)[6] <- "Date"
+  #colnames(coord4)[7] <- "MacroSieveSize_mm"
+  #colnames(coord4)[10] <- "ValidName(WoRMS)"
+  #colnames(coord4)[11] <- "Rank"
+  #colnames(coord4)[12] <- "TaxonQualifier"
+  #colnames(coord4)[13] <- "AphiaID"
+  #colnames(coord4)[14] <- "Abund"
+  #colnames(coord4)[16] <- "SampleCode2"
+  #colnames(coord4)[17] <- "DataOwner"
+  #colnames(coord4)[18] <- "WaterDepth"
+  #colnames(coord4)[19] <- "SampleSize"
+  
+  ## Remove rows with cobbles
+  #   coord4 = filter(coord4, !(wwacr %in% "Co"))
+  # setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+  #write.csv(coord4,'coord4.csv', row.names=F)
+  #    return(coord4)
+  #  })
   #__________________________________________________________________________________________    
   ## BASELINE DATA SUBSET ####
   selsurbas <- reactive({
-    
-    a <- subset( coord()[,c(4,5,6,7,11,12)],surveyname %in% input$baselineInput)
-    
+    # 1year,
+    #2 stationcode,
+    #3 surveyname,
+    #4 samplecode,
+    #5 samplelong,
+    #6 samplelat,
+    #7 wwacr,
+    #8 SUM(sv.percentage) 
+    #a <- subset( coord()[,c(4,5,6,7,11,12)],surveyname %in% input$baselineInput)
+    a <- subset( coord()[,c(4,2,5,6,3,7,8)],surveyname %in% input$baselineInput)#
     return(a)
   })
   #__________________________________________________________________________________________  
   ## MONITORING DATA SUBSET ####
   selsurmon <- reactive({
-    b <- subset( coord()[,c(4,5,6,7,11,12)],surveyname %in% input$monitoringInput)
+    b <- subset( coord()[,c(4,2,5,6,3,7,8)],surveyname %in% input$monitoringInput)#samplecode,stationcode,samplelong,samplelat,surveyname,wwacr,SUM(sv.percentage) 
     return(b)
   })
   #__________________________________________________________________________________________ 
   #### BASELINE DATA: WIDE FORMAT #### 
   
   long <- reactive({
-    long2 <- selsurbas()[,c(1:6)]#stationcode,surveyname,stationlong,stationlat,wwacr,sum
-    long3 <- dcast(long2, stationcode+stationlong+ stationlat+surveyname ~ wwacr, value.var="sum")
+    long2 <- selsurbas()[,c(1:7)]#samplecode,stationcode,surveyname,stationlong,stationlat,wwacr,sum
+    long3 <- dcast(long2, samplecode+stationcode+samplelong+ samplelat+surveyname ~ wwacr, value.var="sum")
     long3$time <- "baseline"
     
     ##Change NA to zero (to allow dor rowsum calculation)
-    long3[, 5:11][is.na(long3[, 5:11])] <- 0
+    long3[, 6:12][is.na(long3[, 6:12])] <- 0
     return(long3)
   })
   #_________________________________________________________________________________________  
   #### MONITORING DATA: WIDE FORMAT #### 
   
   longmon <- reactive({
-    longmon2 <- selsurmon()[,c(1:6)]#stationcode,surveyname,stationlong,stationlat,wwacr,sum
-    longmon3 <- dcast(longmon2, stationcode+stationlong+ stationlat+surveyname ~ wwacr, value.var="sum")
+    longmon2 <- selsurmon()[,c(1:7)]#stationcode,surveyname,stationlong,stationlat,wwacr,sum
+    longmon3 <- dcast(longmon2, samplecode+stationcode+samplelong+ samplelat+surveyname ~ wwacr, value.var="sum")
     longmon3$time <- "monitoring"
     
     ##Change NA to zero (to allow dor rowsum calculation)
-    longmon3[, 5:11][is.na(longmon3[, 5:11])] <- 0
+    longmon3[, 6:12][is.na(longmon3[, 6:12])] <- 0
     
     return(longmon3)
   })
@@ -688,13 +733,14 @@ order by s.year desc, st.stationcode asc;",
   #### BASELINE DATA (WIDE): TABLE ####
   
   output$widebas <- DT::renderDataTable({
-    DT::datatable(long()[,c(1:4,11,8,10,6,7,9,5)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c("cG", "mG","fG","cS","mS","fS","SC"), digits=1) 
+    #DT::datatable(long()
+    DT::datatable(long()[,c(1:5,12,9,11,7,8,10,6)], colnames=c("Sample Code","Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c("cG", "mG","fG","cS","mS","fS","SC"), digits=1) 
   })
   #__________________________________________________________________________________________ 
   #### MONITORING DATA (WIDE): TABLE ####
   
   output$widemon <- DT::renderDataTable({
-    DT::datatable(longmon()[,c(1:4,11,8,10,6,7,9,5)],colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 8))%>%formatRound(columns=c("cG", "mG","fG","cS","mS","fS","SC"), digits=1) #removing [,1:11] will get rid of error message?????
+    DT::datatable(longmon()[,c(1:5,12,9,11,7,8,10,6)],colnames=c("Sample Code","Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 8))%>%formatRound(columns=c("cG", "mG","fG","cS","mS","fS","SC"), digits=1) #removing [,1:11] will get rid of error message?????
   })
   
   #__________________________________________________________________________________________
@@ -733,10 +779,11 @@ order by s.year desc, st.stationcode asc;",
       
       
       filter(if (input$paired == TRUE) match == TRUE else !is.na(match))
-   
+    
+    
+    df3 <- df2[,1:13]
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
-    #write.csv(df2,'df2.csv', row.names=F)
-    df3 <- df2[,1:12]
+    #write.csv(df3,'longalltest.csv', row.names=F)
     #df3 <- df3[df3$stationcode != "A_0566",]
     return(df3)
     
@@ -746,8 +793,8 @@ order by s.year desc, st.stationcode asc;",
   #### ALL DATA: TABLE ####
   
   output$wideall <- DT::renderDataTable({
-    
-    DT::datatable(longalltest()[,c(1:4,11,8,10,6,7,9,5)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1)
+    #DT::datatable(longalltest())
+    DT::datatable(longalltest()[,c(1:5,12,9,11,7,8,10,6)], colnames=c("Sample Code","Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 8))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1)
   })
   #__________________________________________________________________________________________
   #### MAP: SHOW PAIRED SAMPLE SITES ####
@@ -767,19 +814,19 @@ order by s.year desc, st.stationcode asc;",
       #addCircleMarkers
       #addCircleMarkers(data = longall()[longall()$surveyname %in% input$baselineInput, ],
       addCircleMarkers(data = longalltest()[longalltest()$surveyname =="Baseline", ],
-                       ~stationlong,
-                       ~stationlat,
+                       ~samplelong,
+                       ~samplelat,
                        group = "myMarkers3",
-                       popup = ~paste("<b>Station Code: </b>",stationcode),
+                       popup = ~paste("<b>Sample Code: </b>",samplecode),
                        radius =3.5,
                        color = "blue",
                        stroke = FALSE, fillOpacity = 1)%>%
       #addCircleMarkers(data = longall()[longall()$surveyname %in% input$monitoringInput, ],
       addCircleMarkers(data = longalltest()[longalltest()$surveyname == "Monitoring", ],                 
-                       ~stationlong,
-                       ~stationlat,
+                       ~samplelong,
+                       ~samplelat,
                        group = "myMarkers4",
-                       popup = ~paste("<b>Station Code: </b>",stationcode),
+                       popup = ~paste("<b>Sample Code: </b>",samplecode),
                        radius =2,
                        color = "#00CCCC",
                        stroke = FALSE, fillOpacity = 1)#%>%addLegend(
@@ -803,78 +850,99 @@ order by s.year desc, st.stationcode asc;",
     
     ## Change point data to a sf object
     st_points <- longalltest() %>%
-      mutate_at(vars(stationlong, stationlat), as.numeric) %>%   # coordinates must be numeric
+      mutate_at(vars(samplelong, samplelat), as.numeric) %>%   # coordinates must be numeric
       st_as_sf(
-        coords = c("stationlong", "stationlat"),
+        coords = c("samplelong", "samplelat"),
         agr = "constant",
         crs = 4326,        # nad83 / new york long island projection
         stringsAsFactors = FALSE,
         remove = F)
     
     ## Split off stations in Ref
-    stations_in_ref <- st_join(st_points, ref, join =st_within)
+    stations_in_ref <- st_join(st_points, test.ref(), join =st_within)
     
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(stations_in_ref,'stations_in_ref.csv', row.names=F)
     
-
+    
     ## Count number of rows in stations_in_ref
     count <- nrow(stations_in_ref)
     
     ## Count number of samples in a ref site
-   count.na<- sum(is.na(stations_in_ref$area))
-   
-   ## if no ref samples then create an empty df for stations_in_ref2, otherwise subset where area is not NA
-   if(count==count.na){
-     stations_in_ref2 <-stations_in_ref[0,]
-     
-   } else{
-     stations_in_ref2 <- stations_in_ref[!is.na(stations_in_ref$area),]#stations associated with a ref box
-     stations_in_ref2$treatment <- "REF"
-     stations_in_ref2$treatment2 <- paste(stations_in_ref2$area, "-", stations_in_ref2$treatment)
-   }
+    count.na<- sum(is.na(stations_in_ref$area))
+    
+    ## if no ref samples then create an empty df for stations_in_ref2, otherwise subset where area is not NA
+    if(count==count.na){
+      stations_in_ref2 <-stations_in_ref[0,]
+      
+    } else{
+      stations_in_ref2 <- stations_in_ref[!is.na(stations_in_ref$area),]#stations associated with a ref box
+      stations_in_ref2$treatment <- "REF"
+      stations_in_ref2$treatment2 <- paste(stations_in_ref2$area, "-", stations_in_ref2$treatment)
+    }
     
     #stations_in_ref2 <- stations_in_ref[!is.na(stations_in_ref$area),]#stations associated with a ref box
     #stations_in_ref2$treatment <- "REF"
     #stations_in_ref2$treatment2 <- paste(stations_in_ref2$area, "-", stations_in_ref2$treatment)
-  
     
+    #__________________________________________________________________________________________  
     ## These are the stations remaining after those in Ref removed
     stations_after_ref_removed <- stations_in_ref[is.na(stations_in_ref$area),]
-
+    
     
     ## Now take out the stations in PIZs. Cols 1:11 are those for st_points
-    stations_in_piz <- st_join(stations_after_ref_removed, piz, join =st_within)
+    #stations_in_piz <- st_join(stations_after_ref_removed, piz, join =st_within)
+    stations_in_piz <- st_join(stations_after_ref_removed, test.piz(), join =st_within)
     
-    stations_in_piz <-  stations_in_piz[,c(1:12,15,16,17)]
-    colnames(stations_in_piz)[13] <- "region"
-    colnames(stations_in_piz)[14] <- "area"
+    stations_in_piz <-  stations_in_piz[,c(1:13,16,17,18)]
+    colnames(stations_in_piz)[14] <- "region"
+    colnames(stations_in_piz)[15] <- "area"
+    #########################
+    ## Count number of rows in stations_in_ref
+    countpiz <- nrow(stations_in_piz)
     
-    stations_in_piz2 <- stations_in_piz[!is.na(stations_in_piz$area),]
-    stations_in_piz2$treatment <- "PIZ"
-    stations_in_piz2$treatment2 <- paste(stations_in_piz2$area, "-",stations_in_piz2$treatment )
-    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
-    #write.csv(stations_in_piz2,'stations_in_piz2.csv', row.names=F)
-    ## These are the stations not in ref or piz
+    ## Count number of samples in a ref site
+    countpiz.na<- sum(is.na(stations_in_piz$area))
+    if(countpiz==countpiz.na){
+      stations_in_piz2 <- stations_in_piz[0,]
+    } else{
+      ########################
+      stations_in_piz2 <- stations_in_piz[!is.na(stations_in_piz$area),]
+      stations_in_piz2$treatment <- "PIZ"
+      stations_in_piz2$treatment2 <- paste(stations_in_piz2$area, "-",stations_in_piz2$treatment )
+      #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+      #write.csv(stations_in_piz2,'stations_in_piz2.csv', row.names=F)
+      ## These are the stations not in ref or piz
+    }
+    #__________________________________________________________________________________________       
     stations_siz_and_context <- stations_in_piz[is.na(stations_in_piz$area),]
     
     ## Now take out the stations in SIZs. Cols 1:6 are those for st_points
-    stations_in_siz <- st_join(stations_siz_and_context, siz, join =st_within)
+    stations_in_siz <- st_join(stations_siz_and_context, test.siz(), join =st_within)
     
-    stations_in_siz <-  stations_in_siz[,c(1:12,15,16,17)]
-    colnames(stations_in_siz)[13] <- "region"
-    colnames(stations_in_siz)[14] <- "area"
+    stations_in_siz <-  stations_in_siz[,c(1:13,16,17,18)]
+    colnames(stations_in_siz)[14] <- "region"
+    colnames(stations_in_siz)[15] <- "area"
+    ## Count number of rows in stations_in_ref
+    countsiz <- nrow(stations_in_siz)
     
-    stations_in_siz2 <- stations_in_siz[!is.na(stations_in_siz$area),]
-    stations_in_siz2$treatment <- "SIZ"
-    stations_in_siz2$treatment2 <- paste(stations_in_siz2$area, "-", stations_in_siz2$treatment)
+    ## Count number of samples in a ref site
+    countsiz.na<- sum(is.na(stations_in_siz$area))
     
+    if(countsiz==countsiz.na){
+      stations_in_siz2 <- stations_in_siz[0,]
+    } else{
+      stations_in_siz2 <- stations_in_siz[!is.na(stations_in_siz$area),]
+      stations_in_siz2$treatment <- "SIZ"
+      stations_in_siz2$treatment2 <- paste(stations_in_siz2$area, "-", stations_in_siz2$treatment)
+    }
+    #__________________________________________________________________________________________         
     ## Context
     stations_in_context <- stations_in_siz[is.na(stations_in_siz$area),]
     stations_in_context$area <- "CONTEXT"
     stations_in_context$treatment <- "REF"
     stations_in_context$treatment2 <- paste(stations_in_context$area, "-",stations_in_context$treatment )
-    
+    #__________________________________________________________________________________________        
     ## Now joint outputs together
     stations <- rbind(stations_in_piz2,stations_in_ref2,stations_in_siz2,stations_in_context)#today
     #stations <- rbind(stations_in_piz2,stations_in_siz2,stations_in_context)
@@ -887,7 +955,7 @@ order by s.year desc, st.stationcode asc;",
     st_geometry(stations) <- NULL
     
     stations$treatment <- factor(stations$treatment, levels=c("PIZ","SIZ","REF"))
-
+    
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(stations,'stations.csv', row.names=F)
     
@@ -897,8 +965,8 @@ order by s.year desc, st.stationcode asc;",
   ### TABLE OF SAMPLES AND THEIR TREATMENT CATEGORIES ####        
   
   output$refst <- DT::renderDataTable({
-    
-    DT::datatable(stations()[,c(1:4,11,8,10,6,7,9,5,12,13,14,15,16)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG","Time","Region","Area","Treatment","Treatment2"),options = list(pageLength = 10))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1)
+    DT::datatable(stations())
+    #DT::datatable(stations()[,c(1:4,11,8,10,6,7,9,5,12,13,14,15,16)], colnames=c("Station Code","Long","Lat","Survey Name","SC","fS","mS","cS","fG","mG","cG","Time","Region","Area","Treatment","Treatment2"),options = list(pageLength = 10))%>%formatRound(columns=c('cG', 'mG','fG','cS','mS','fS','SC'), digits=1)
   })
   #__________________________________________________________________________________________         
   #### REGION: PREPARE DATA #####
@@ -912,9 +980,10 @@ order by s.year desc, st.stationcode asc;",
     
     ## Create new col for treatment3 (concat of site/treatment/time)
     stations.reg$treatment3 <- paste(stations.reg$treatment2, "-", stations.reg$time)
-    write.csv(stations.reg,'stations_reg.csv', row.names=F)  
+    setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    write.csv(stations.reg[,2:ncol(stations.reg)],'stations_reg.csv', row.names=F)  
     
-    return(stations.reg)
+    return(stations.reg[,2:ncol(stations.reg)])#exc the samplecode
   })
   #__________________________________________________________________________________________
   #### SITE: PREPARE DATA #####
@@ -927,7 +996,7 @@ order by s.year desc, st.stationcode asc;",
     stations.site$treatment3 <- paste(stations.site$treatment2, "$", stations.site$time)
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(stations.site,'stations.site.csv', row.names=F)  
-    return(stations.site)
+    return(stations.site[,2:ncol(stations.site)])#exc the samplecode
   })
   #__________________________________________________________________________________________
   #### SUB-REGION: PREPARE DATA #####
@@ -938,18 +1007,18 @@ order by s.year desc, st.stationcode asc;",
     stations6 <- stations6[which(stations6$treatment=='PIZ'|stations6$treatment=='SIZ'|stations6$treatment=='REF'),]
     
     if ( input$arrayInput=='South Coast RSMP') {
-      stations6$area <- ifelse(stations6$stationlong > -2.14 & stations6$stationlong < -1.288, 'West IOW',
-                               ifelse(stations6$stationlong > -1.288 & stations6$stationlong < -0.779, 'East IOW',
-                                      ifelse(stations6$stationlong > -0.779 & stations6$stationlong < 0.244, 'Owers','')))
+      stations6$area <- ifelse(stations6$samplelong > -2.14 & stations6$samplelong < -1.288, 'West IOW',
+                               ifelse(stations6$samplelong > -1.288 & stations6$samplelong < -0.779, 'East IOW',
+                                      ifelse(stations6$samplelong > -0.779 & stations6$samplelong < 0.244, 'Owers','')))
       #stations6$treatment2 <- paste(stations6$treatment, "-", stations6$area)
       stations6$treatment2 <- paste(stations6$area, "-", stations6$treatment)
       
       ## delete rows where col 'area' is blank
       stations6 <- stations6[-which(stations6$area == ""), ]
     } else if ( input$arrayInput=='Thames RSMP') {
-      stations6$area <- ifelse(stations6$stationlong > 1 & stations6$stationlong < 1.66, 'Thames 1',
-                               ifelse(stations6$stationlong > 1.66 & stations6$stationlong < 1.8, 'Thames 2',
-                                      ifelse(stations6$stationlong > 1.8 & stations6$stationlong < 2, 'Thames 3','')))
+      stations6$area <- ifelse(stations6$samplelong > 1 & stations6$samplelong < 1.66, 'Thames 1',
+                               ifelse(stations6$samplelong > 1.66 & stations6$samplelong < 1.8, 'Thames 2',
+                                      ifelse(stations6$samplelong > 1.8 & stations6$samplelong < 2, 'Thames 3','')))
       # stations6$treatment2 <- paste(stations6$treatment, "-", stations6$area)
       stations6$treatment2 <- paste(stations6$area, "-", stations6$treatment)
       ## delete rows where col 'area' is blank
@@ -960,7 +1029,7 @@ order by s.year desc, st.stationcode asc;",
     stations6$treatment3 <- paste(stations6$treatment2, "$", stations6$time)
     #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
     #write.csv(stations6,'stations6.csv', row.names=F)      
-    return(stations6)
+    return(stations6[,2:ncol(stations6)])#exc the samplecode
   })
   #__________________________________________________________________________________________
   #### REGION: NMDS 2D ####
@@ -996,13 +1065,13 @@ order by s.year desc, st.stationcode asc;",
     data.scores2 <- cbind(data,data.scores)
     
     ## Subset data for Area?
-    data.scores3 <- data.scores2
+    #data.scores3 <- data.scores2
     
     ## Make a df for your subset with coordinates and time
-    data.scores.site = as.data.frame(data.scores3[,c(17:19,12)])
+    #data.scores.site = as.data.frame(data.scores3[,c(18:20,13)])
     
     ## Produce plot
-    en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
+    #en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
     
     
     p <-  ggplot(data = data.scores2, aes(x = NMDS1, y = NMDS2, col=time)) + 
@@ -1125,7 +1194,7 @@ order by s.year desc, st.stationcode asc;",
     data$time <- as.factor(data$time)
     data$treatment3 <- factor(data$treatment3)
     data$area <- as.factor(data$area)
-
+    
     ## Seperate out sieve data for ordination. Make sure values are numeric
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
@@ -1146,7 +1215,7 @@ order by s.year desc, st.stationcode asc;",
     data.scores2 <- cbind(data,data.scores)
     
     ## Subset data for PIZ
-   # data.piz <- data.scores2[which(data.scores2$treatment2=='PIZ'),]#today
+    # data.piz <- data.scores2[which(data.scores2$treatment2=='PIZ'),]#today
     data.piz <- data.scores2
     
     ## Number of levels in treatment3
@@ -1156,7 +1225,7 @@ order by s.year desc, st.stationcode asc;",
     cols <- rep(c('blue','#00CCCC'), (treat3nlevs/2))
     
     ## Plot
-   # fig.piz <- plot_ly(data.piz, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~treatment3,colors =cols)
+    # fig.piz <- plot_ly(data.piz, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~treatment3,colors =cols)
     fig.piz <- plot_ly(data.piz, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~treatment3,colors =cols,text = ~paste('Station Code: ', stationcode))
     fig.piz <- fig.piz %>% add_markers()
     fig.piz <- fig.piz %>% layout(scene = list(xaxis = list(title = 'NMDS1'),
@@ -1164,21 +1233,48 @@ order by s.year desc, st.stationcode asc;",
                                                zaxis = list(title = 'NMDS3')))
     print(fig.piz)
   })
-
+  
   #__________________________________________________________________________________________
   #### REGION: ANOSIM ####
   
   anosim.reg <- reactive({
     
+    
+    ##################
+    ## Find out which treatments have both baseline and monitoring samples
+    library(dplyr)
+    data <- stations.reg()
+    data2 <- data%>%
+      group_by(treatment2,time) %>%
+      tally() %>%
+      group_by(time)
+    
+    ## Tally by treatment 
+    data3 <- data.frame(table(data2$treatment2))
+    
+    
+    ## ID treatment groups where Freq is not 2 (i.e. missing eith baseline or monitoring)
+    data4 <- data3[which(data3$Freq!=2),]
+    
+    ## Remove rows where there isn't baseline and monitoring
+    `%notin%` <- Negate(`%in%`)#Negate %in%
+    data5 <-  data %>% filter(treatment2 %notin% data4$Var1)
+    data <- data5
+    
+    ###################
+    
     ## Pick off site variable
-    site = as.character(stations.reg()$treatment2)
-    freqs = table(site)
+    site = as.character(data$treatment2)
+    
+    freqs = data.frame(table(site))
     
     ## Remove sites with only one before and after sample
-    freqs.big = freqs[freqs>=2.5]
+    #freqs.big = freqs[freqs>=2.5]
+    freqs.big = freqs[which(freqs$Freq>=2.5),]
     
     ## There are 35 sites that qualify
-    nsites = length(freqs.big)
+    #nsites = length(freqs.big)
+    nsites <- nrow(freqs.big) 
     
     ## Put the site names into a vector
     arse = as.data.frame(freqs.big)
@@ -1194,7 +1290,7 @@ order by s.year desc, st.stationcode asc;",
       use = site == site.names[j]
       
       ## get the particle size matrix and the grouping vector
-      site.use = stations.reg()[use,c(12,5:11)]
+      site.use = data[use,c(12,5:11)]
       time.use = site.use$time
       matrix.use = site.use[,2:8]
       anos = anosim(matrix.use, grouping = time.use)
@@ -1203,6 +1299,8 @@ order by s.year desc, st.stationcode asc;",
     }
     
     anosim.res <- data.frame(site.names,R,p)
+    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(anosim.res,'anosim_res.csv', row.names=F)
     
     ## Remove values where p>0.05
     #anosim.res <- anosim.res[which(anosim.res$p<0.05),]
@@ -1225,15 +1323,41 @@ order by s.year desc, st.stationcode asc;",
   #### SUBREGION: ANOSIM ####
   anosim.subreg <- reactive({
     
+    
+    ##################
+    ## Find out which treatments have both baseline and monitoring samples
+    library(dplyr)
+    data <- stations.subreg()
+    data2 <- data%>%
+      group_by(treatment2,time) %>%
+      tally() %>%
+      group_by(time)
+    
+    ## Tally by treatment 
+    data3 <- data.frame(table(data2$treatment2))
+    
+    
+    ## ID treatment groups where Freq is not 2 (i.e. missing eith baseline or monitoring)
+    data4 <- data3[which(data3$Freq!=2),]
+    
+    ## Remove rows where there isn't baseline and monitoring
+    `%notin%` <- Negate(`%in%`)#Negate %in%
+    data5 <-  data %>% filter(treatment2 %notin% data4$Var1)
+    data <- data5
+    
+    ###################
+    
     ## Pick off site variable
-    site = as.character(stations.subreg()$treatment2)
-    freqs = table(site)
+    site = as.character(data$treatment2)
+    freqs = data.frame(table(site))
     
     ## Remove sites with only one before and after sample
-    freqs.big = freqs[freqs>=2.5]
+    #freqs.big = freqs[freqs>=2.5]
+    freqs.big = freqs[which(freqs$Freq>=2.5),]
     
     ## There are 35 sites that qualify
-    nsites = length(freqs.big)
+    #nsites = length(freqs.big)
+    nsites <- nrow(freqs.big)
     
     ## Put the site names into a vector
     arse = as.data.frame(freqs.big)
@@ -1249,7 +1373,7 @@ order by s.year desc, st.stationcode asc;",
       use = site == site.names[j]
       
       ## get the particle size matrix and the grouping vector
-      site.use = stations.reg()[use,c(12,5:11)]
+      site.use = data[use,c(12,5:11)]
       time.use = site.use$time
       matrix.use = site.use[,2:8]
       anos = anosim(matrix.use, grouping = time.use)
@@ -1281,15 +1405,40 @@ order by s.year desc, st.stationcode asc;",
   
   anosim.site <- reactive({
     
+    
+    ##################
+    ## Find out which treatments have both baseline and monitoring samples
+    library(dplyr)
+    data <- stations.site()
+    data2 <- data%>%
+      group_by(treatment2,time) %>%
+      tally() %>%
+      group_by(time)
+    
+    ## Tally by treatment 
+    data3 <- data.frame(table(data2$treatment2))
+    
+    
+    ## ID treatment groups where Freq is not 2 (i.e. missing eith baseline or monitoring)
+    data4 <- data3[which(data3$Freq!=2),]
+    
+    ## Remove rows where there isn't baseline and monitoring
+    `%notin%` <- Negate(`%in%`)#Negate %in%
+    data5 <-  data %>% filter(treatment2 %notin% data4$Var1)
+    data <- data5
+    
+    ###################
     ## Pick off site variable
-    site = as.character(stations.site()$treatment2)
-    freqs = table(site)
+    site = as.character(data$treatment2)
+    freqs = data.frame(table(site))
     
     ## Remove sites with only one before and after sample
-    freqs.big = freqs[freqs>=2.5]
+    #freqs.big = freqs[freqs>=2.5]
+    freqs.big = freqs[which(freqs$Freq>=2.5),]
     
     ## There are 35 sites that qualify
-    nsites = length(freqs.big)
+    #nsites = length(freqs.big)
+    nsites <- nrow(freqs.big)
     
     ## Put the site names into a vector
     arse = as.data.frame(freqs.big)
@@ -1305,7 +1454,7 @@ order by s.year desc, st.stationcode asc;",
       use = site == site.names[j]
       
       ## get the particle size matrix and the grouping vector
-      site.use = stations.site()[use,c(12,5:11)]
+      site.use = data[use,c(12,5:11)]
       time.use = site.use$time
       matrix.use = site.use[,2:8]
       anos = anosim(matrix.use, grouping = time.use)
@@ -2256,7 +2405,7 @@ order by s.year desc, st.stationcode asc;",
     validate(
       need(data_long2$treatment != "", "No data to plot (tretaments either 'similar' or 'no evidence of change')"))
     
-    p<-ggplot(data=data_long, aes(x=sed, y=percentage,fill=percentage<0)) +
+    p<-ggplot(data=data_long2, aes(x=sed, y=percentage,fill=percentage<0)) +
       geom_bar(stat="identity")+
       scale_fill_manual(guide = FALSE,
                         values = c("#4682B4", "#4682B4"))+
@@ -2324,19 +2473,8 @@ order by s.year desc, st.stationcode asc;",
   
   output$reg.line <- renderPlot({
     #rhandsontable(stations7, width = 900, height = 300)
-    adata <- stations()[,c(15,12,11,8,10,6,7,9,5,1)]#treatment2, time, SC,fS,mS,cS,fG,mG,cG,stationcode
+    adata <- stations.reg()[,c(15,12,11,8,10,6,7,9,5,1)]#treatment2, time, SC,fS,mS,cS,fG,mG,cG,stationcode
     adata$ID <- seq.int(nrow(adata))
-    
-    ## Get summary data into long format
-    library(tidyr)
-    data_long <- gather(adata, sed, percentage, SC:cG, factor_key=TRUE)
-    
-    ## these are the sites where AOSIM was significant
-    #siganosim <- anosim.reg()[which(anosim.reg()$interpretation!='similar'),]
-    siganosim <- anosim.reg()#[which(anosim.reg()$interpretation!='similar'),] ## SELECT NOT SIMILAR
-    notsimilar <- siganosim$site.names
-    data_long2 <- data_long[data_long$treatment %in% notsimilar, ]
-    #data_long2 <- data_long[which(data_long$treatment2=='340 - SIZ'|data_long$treatment2=='435/2 - PIZ'|data_long$treatment2=='Box 4 - REF'),]
     
     ## Data by Area
     library(dplyr)
@@ -2354,21 +2492,17 @@ order by s.year desc, st.stationcode asc;",
         cG = mean(cG, na.rm = TRUE))
     sumdata
     
-    ## Order by treatment and area
-    #sumdata2 <- sumdata[order(sumdata$treatment,sumdata$area ),]
     
     ## Get into long format
+    library(tidyr)
     data_long_mean <- gather(sumdata, sed, percentage, SC:cG, factor_key=TRUE)
     
-    ## Select sites to plot
-    siganosim <- anosim.reg()
-    notsimilar <- siganosim$site.names
-    data_long_mean2 <- data_long_mean[data_long_mean$treatment %in% notsimilar, ]
+    
     
     ## Plots
     p <- ggplot()+
       # geom_line(data=data_long2, aes(x=sed, y=percentage, col=time,group=ID),linetype = "dashed",size = 0.5) +# samples
-      geom_line(data=data_long_mean2,aes(x=sed, y=percentage,col=time, group=time),size = 3)+ #means
+      geom_line(data=data_long_mean,aes(x=sed, y=percentage,col=time, group=time),size = 3)+ #means
       scale_colour_manual(values = c("blue","#00CCCC"))+
       labs(x="Sediment",y="Percentage")+
       facet_wrap(~treatment)#a 
@@ -2381,16 +2515,10 @@ order by s.year desc, st.stationcode asc;",
     adata <- stations.subreg()[,c(16,12,11,8,10,6,7,9,5,1)]#treatment2, time, SC,fS,mS,cS,fG,mG,cG,stationcode
     adata$ID <- seq.int(nrow(adata))
     
+    
     ## Get summary data into long format
     library(tidyr)
     data_long <- gather(adata, sed, percentage, SC:cG, factor_key=TRUE)
-    
-    ## these are the sites where AOSIM was significant
-    #siganosim <- anosim.reg()[which(anosim.reg()$interpretation!='similar'),]
-    siganosim <- anosim.subreg()#[which(anosim.reg()$interpretation!='similar'),] ## SELECT NOT SIMILAR
-    notsimilar <- siganosim$site.names
-    data_long2 <- data_long[data_long$treatment2 %in% notsimilar, ]
-    #data_long2 <- data_long[which(data_long$treatment2=='340 - SIZ'|data_long$treatment2=='435/2 - PIZ'|data_long$treatment2=='Box 4 - REF'),]
     
     ## Data by Area
     library(dplyr)
@@ -2408,21 +2536,15 @@ order by s.year desc, st.stationcode asc;",
         cG = mean(cG, na.rm = TRUE))
     sumdata
     
-    ## Order by treatment and area
-    #sumdata2 <- sumdata[order(sumdata$treatment,sumdata$area ),]
-    
     ## Get into long format
+    library(tidyr)
     data_long_mean <- gather(sumdata, sed, percentage, SC:cG, factor_key=TRUE)
     
-    ## Select sites to plot
-    siganosim <- anosim.subreg()
-    notsimilar <- siganosim$site.names
-    data_long_mean2 <- data_long_mean[data_long_mean$treatment2 %in% notsimilar, ]
     
     ## Plots
     p <- ggplot()+
-      geom_line(data=data_long2, aes(x=sed, y=percentage, col=time,group=ID),linetype = "dashed",size = 0.5) +# samples
-      geom_line(data=data_long_mean2,aes(x=sed, y=percentage,col=time, group=time),size = 3)+ #means
+      geom_line(data=data_long, aes(x=sed, y=percentage, col=time,group=ID),linetype = "dashed",size = 0.5) +# samples
+      geom_line(data=data_long_mean,aes(x=sed, y=percentage,col=time, group=time),size = 3)+ #means
       scale_colour_manual(values = c("blue","#00CCCC"))+
       labs(x="Sediment",y="Percentage")+
       facet_wrap(~treatment2)#a 
@@ -2433,17 +2555,12 @@ order by s.year desc, st.stationcode asc;",
   
   output$site.line <- renderPlot({
     #rhandsontable(stations7, width = 900, height = 300)
-    adata <- stations()[,c(16,12,11,8,10,6,7,9,5,1)]#treatment2, time, SC,fS,mS,cS,fG,mG,cG,stationcode
+    adata <- stations()[,c(17,13,12,9,11,7,8,10,6,1)]#treatment2, time, SC,fS,mS,cS,fG,mG,cG,stationcode
     adata$ID <- seq.int(nrow(adata))
+    
     ## Get summary data into long format
     library(tidyr)
     data_long <- gather(adata, sed, percentage, SC:cG, factor_key=TRUE)
-    
-    ## these are the sites where AOSIM was significant
-    
-    #siganosim <- anosim.site()[which(anosim.site()$interpretation!='similar'& anosim.site()$interpretation!='p>0.05: no evidence of change'),]
-    #notsimilar <- siganosim$site.names
-    #data_long2 <- data_long[data_long$treatment2 %in% notsimilar, ]
     
     
     ## Data by Area
@@ -2462,28 +2579,13 @@ order by s.year desc, st.stationcode asc;",
         cG = mean(cG, na.rm = TRUE))
     sumdata
     
-    ## Order by treatment and area
-    #sumdata2 <- sumdata[order(sumdata$treatment,sumdata$area ),]
-    
-    ## add unique 
     ## get into long format
     data_long_mean <- gather(sumdata, sed, percentage, SC:cG, factor_key=TRUE)
-    #data_long_mean$ID <- seq.int(nrow(data_long_mean))
     
-    ##select 127
-    #data_long_mean2 <-data_long_mean[which(data_long_mean$treatment2=='340 - SIZ'|data_long_mean$treatment2=='435/2 - PIZ'|data_long_mean$treatment2=='Box 4 - REF'),]
-    
-    ## Select sites to plot
-    
-    # siganosim <- anosim.site()[which(anosim.site()$interpretation!='similar' & anosim.site()$interpretation!='p>0.05: no evidence of change'),]
-    # notsimilar <- siganosim$site.names
-    # data_long_mean2 <- data_long_mean[data_long_mean$treatment2 %in% notsimilar, ]
-    
-    data_long_mean2 <- data_long_mean
     ## Plots
     p <- ggplot()+
       geom_line(data=data_long, aes(x=sed, y=percentage, col=time,group=ID),linetype = "dashed",size = 0.5) +# samples
-      geom_line(data=data_long_mean2,aes(x=sed, y=percentage,col=time, group=time),size = 2)+ #means
+      geom_line(data=data_long_mean,aes(x=sed, y=percentage,col=time, group=time),size = 2)+ #means
       scale_colour_manual(values = c("blue","#00CCCC"))+
       labs(x="Sediment",y="Percentage")+
       facet_wrap(~treatment2)#a
@@ -2946,8 +3048,8 @@ order by s.year desc, st.stationcode asc;",
       #addCircleMarkers
       #addCircleMarkers(data = longall()[longall()$surveyname %in% input$baselineInput, ],
       addCircleMarkers(data = longalltest()[longalltest()$surveyname =="Baseline", ],
-                       ~stationlong,
-                       ~stationlat,
+                       ~samplelong,
+                       ~samplelat,
                        #group = "myMarkers3",
                        popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =2.5,#3.5
@@ -2955,8 +3057,8 @@ order by s.year desc, st.stationcode asc;",
                        stroke = FALSE, fillOpacity = 1)%>%
       #addCircleMarkers(data = longall()[longall()$surveyname %in% input$monitoringInput, ],
       addCircleMarkers(data = longalltest()[longalltest()$surveyname == "Monitoring", ],                 
-                       ~stationlong,
-                       ~stationlat,
+                       ~samplelong,
+                       ~samplelat,
                        #group = "myMarkers4",
                        popup = ~paste("<b>Station Code: </b>",stationcode),
                        radius =1,#2
