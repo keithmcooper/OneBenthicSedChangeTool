@@ -2177,6 +2177,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Order by treatment and area
     sumdata2 <- sumdata[order(sumdata$treatment2 ),]
+    
     return(sumdata2)
   })
   #__________________________________________________________________________________________
@@ -2206,9 +2207,9 @@ order by s.year desc, st.stationcode asc;",
   sed.sum.reg.diff <- reactive({ 
     
     data.diff <- stations.reg()
+    data.diff$surveyname <- factor(data.diff$surveyname, levels=c(input$baselineInput,input$monitoringInput))
     #data.diff$surveyname <- factor(stations.reg()$surveyname, levels=c(input$baselineInput,input$monitoringInput))
-    
-    data.diff$surveyname <- factor(data.diff$surveyname, levels=c("Baseline","Monitoring"))
+    #data.diff$surveyname <- factor(data.diff$surveyname, levels=c("Baseline","Monitoring"))
     
     #data.diff2=stations.reg()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
     data.diff2=data.diff[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
@@ -2238,7 +2239,7 @@ order by s.year desc, st.stationcode asc;",
     data.diff4 <- data.diff3[,c(1,2,3,11:17)]#surveyname,treatment,count,SC_diff:cG_diff
     #data.diff5 <- data.diff4[which(data.diff4$surveyname == input$monitoringInput),] #
     #
-    data.diff5 <- data.diff4[which(data.diff4$surveyname == "Monitoring"),]
+    data.diff5 <- data.diff4[which(data.diff4$surveyname == input$monitoringInput),]
     return(data.diff5)
   })
   #__________________________________________________________________________________________ 
@@ -2247,8 +2248,9 @@ order by s.year desc, st.stationcode asc;",
   sed.sum.subreg.diff <- reactive({ 
     
     data.diff <- stations.subreg()
+    data.diff$surveyname <- factor(data.diff$surveyname, levels=c(input$baselineInput,input$monitoringInput))
     #data.diff$surveyname <- factor(stations.reg()$surveyname, levels=c(input$baselineInput,input$monitoringInput))
-    data.diff$surveyname <- factor(data.diff$surveyname, levels=c("Baseline","Monitoring"))
+    #data.diff$surveyname <- factor(data.diff$surveyname, levels=c("Baseline","Monitoring"))
     
     #data.diff2=stations.reg()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
     data.diff2=data.diff[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
@@ -2276,7 +2278,7 @@ order by s.year desc, st.stationcode asc;",
       )
     
     data.diff4 <- data.diff3[,c(1,2,3,11:17)]#surveyname,treatment,count,SC_diff:cG_diff
-    data.diff5 <- data.diff4[which(data.diff4$surveyname == "Monitoring"),] #
+    data.diff5 <- data.diff4[which(data.diff4$surveyname == input$monitoringInput),] #
     return(data.diff5)
   })
   #__________________________________________________________________________________________ 
@@ -2284,7 +2286,8 @@ order by s.year desc, st.stationcode asc;",
   sed.sum.site.diff <- reactive({ 
     
     data.diff <- stations.site()
-    data.diff$surveyname <- factor(data.diff$surveyname, levels=c("Baseline","Monitoring"))
+    data.diff$surveyname <- factor(data.diff$surveyname, levels=c(input$baselineInput,input$monitoringInput))
+    #data.diff$surveyname <- factor(data.diff$surveyname, levels=c("Baseline","Monitoring"))
     
     #data.diff2=stations.reg()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
     data.diff2=data.diff[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
@@ -2312,7 +2315,9 @@ order by s.year desc, st.stationcode asc;",
       )
     
     data.diff4 <- data.diff3[,c(1,2,3,11:17)]#surveyname,treatment,count,SC_diff:cG_diff
-    data.diff5 <- data.diff4[which(data.diff4$surveyname == "Monitoring"),] #
+    data.diff5 <- data.diff4[which(data.diff4$surveyname == input$monitoringInput),] #
+    #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
+    #write.csv(data.diff5,'data.diff5v3029.csv', row.names=F) 
     return(data.diff5)
   })
   #__________________________________________________________________________________________  
