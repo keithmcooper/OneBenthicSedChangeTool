@@ -61,13 +61,15 @@ data <- dbGetQuery(pool,
 s.samplecode,
 su.surveyname,
 s.samplelong,
-s.samplelat
+s.samplelat,
+su.datapubliclyavailable
 
 
 FROM
 samples.sample as s
 inner join associations.surveysample as susa on susa.sample_samplecode=s.samplecode
 inner join associations.survey as su on su.surveyname = susa.survey_surveyname
+WHERE su.datapubliclyavailable = TRUE
 ;")
 #WHERE st.stationgroup = 'RSMP'
 
@@ -479,11 +481,13 @@ ss.survey_surveyname,
 s.samplelong,
 s.samplelat,
 s.gear_gearcode,
-s.date
+s.date,
+su.datapubliclyavailable
 
 FROM
 samples.sample as s
 inner join associations.surveysample as ss on ss.sample_samplecode=s.samplecode
+inner join associations.survey as su on su.surveyname = ss.survey_surveyname
 left join associations.samplestation as sst on s.samplecode=sst.sample_samplecode
 
 WHERE 
@@ -506,8 +510,8 @@ ORDER by ss.survey_surveyname, s.samplecode;",
   #### OUTPUT  METADATA TABLE FOR SELECTED SAMPLE(S) - WITHIN BOUNDING BOX ####
   
   output$bbdata <- DT::renderDataTable({
-    bbdat2 <- unique(bbcoord()[,1:7])
-    DT::datatable(bbdat2,colnames=c("Sample Code","Station Code","Survey Name","Long","Lat","Gear","Date"),class = "display nowrap",options = list(pageLength = 19))
+    bbdat2 <- unique(bbcoord()[,1:8])
+    DT::datatable(bbdat2,colnames=c("Sample Code","Station Code","Survey Name","Long","Lat","Gear","Date","Data available"),class = "display nowrap",options = list(pageLength = 19))
   })
   #__________________________________________________________________________________________
   #### SELECT SPATIAL LAYERS ####
@@ -708,8 +712,8 @@ inner join associations.survey as su on su.surveyname = susa.survey_surveyname
 inner join sediment_data.sedvar as sedv on sedv.sievesize=sv.sedvar_sievesize
 inner join sediment_data.wentworth as w on w.wwid=sedv.wentworth_id
 where
-su.surveyname IN ({baselinename*}) and su.surveyname NOT LIKE '%Hinkley%'or
-su.surveyname IN ({monitoring*}) and su.surveyname NOT LIKE '%Hinkley%'
+su.surveyname IN ({baselinename*}) or
+su.surveyname IN ({monitoring*})
 
 GROUP BY
 s.year,
