@@ -26,6 +26,7 @@ library(plotly)
 library(DT)
 library(stringr)
 library(vegan)
+library(config)
 #library(geojsonio)
 
 ## For problem solving
