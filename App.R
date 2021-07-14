@@ -50,10 +50,19 @@ setMethod("dbQuoteLiteral", c("Pool", "ANY"),
           }
 )
 #__________________________________________________________________________________________
-#### GET POINT SAMPLE METADATA FOR INITIAL SELECTION CHOICES ####
+#### CREATE A CONNECTION TO OneBenthic LIVE ####
+Sys.setenv(R_CONFIG_ACTIVE = "one_benthic")
 
-## Create a connection to OneBenthic Live. Save the password
-pool <- dbPool(drv = dbDriver("Postgres"), user = "editors_one_benthic@azsclnxgis-ext01 ", password = "0neBenth!c5374", host = "azsclnxgis-ext01.postgres.database.azure.com", port = 5432, dbname = "one_benthic")
+dw <- config::get()
+
+pool <- dbPool(drv = dbDriver(dw$driver),
+               dbname = dw$database,
+               host = dw$server,
+               port =  dw$port,
+               user = dw$uid,
+               password = dw$pwd)
+#__________________________________________________________________________________________
+#### GET POINT SAMPLE METADATA FOR INITIAL SELECTION CHOICES ####
 
 ## SQL query to OneBenthic
 data <- dbGetQuery(pool, 
