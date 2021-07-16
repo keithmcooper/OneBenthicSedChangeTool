@@ -1357,7 +1357,7 @@ order by s.year desc, st.stationcode asc;",
     ## Pick off site variable
     site = as.character(data$treatment2)
     freqs = data.frame(table(site))
-    
+
     ## Remove sites with only one before and after sample
     freqs.big = freqs[which(freqs$Freq>=2.5),]
     
@@ -1686,7 +1686,7 @@ order by s.year desc, st.stationcode asc;",
     #anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05& anosim.reg2$R >0.1),]
     anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05 & anosim.reg2$R > input$num),]
     anosim.reg3$site.names<-str_trim(anosim.reg3$site.names)
-    
+   
     
     library(dplyr)
     
@@ -1695,7 +1695,7 @@ order by s.year desc, st.stationcode asc;",
     
     return(simperdf7)
   })
-  #__________________________________________________________________________________________
+   #__________________________________________________________________________________________
   #### SUBREGION: SIMPER ####
   
   simper.subreg <- reactive({
@@ -1908,10 +1908,11 @@ order by s.year desc, st.stationcode asc;",
     #### region ####
     ## Start with data in object 'stations4' from STEP 10.
     data <- stations.site()
+     
     data$time <- as.factor(data$time)
     ## Seperate out sieve data for ordination. Make sure values are numeric
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-    
+   
     
     ## SIMPER function (euclidean distance)
     #https://stackoverflow.com/questions/35773571/r-vegan-simper-analysis-modify-distance-matrix
@@ -2066,7 +2067,6 @@ order by s.year desc, st.stationcode asc;",
     cusumdf<-do.call(rbind, lapply(rows2, data.frame, stringsAsFactors=FALSE))#values into df
     
     simperdf<-cbind(rowsdf,cusumdf) #combine into one df
-    
     colnames(simperdf)<-c('name','ava','avb','cusum') #change colnames
     simperdf$diff <- (simperdf$avb-simperdf$ava)#05/11
     library(data.table)
@@ -2076,13 +2076,11 @@ order by s.year desc, st.stationcode asc;",
     simperdf2<-separate(data = simperdf, col = left, into = c("a", "b"), sep = "\\_")#seperate contrasts names
     simperdf3<-separate(data = simperdf2, col = a, into = c("a1", "a2"), sep = "\\$")#\\-
     simperdf4<-separate(data = simperdf3, col = b, into = c("b1", "b2"), sep = "\\$")#\\-
-    
-    
+
     simperdf4$match <- ifelse(simperdf4$a1 == simperdf4$b1, TRUE, FALSE)
     
     simperdf5 <- simperdf4[which(simperdf4$match==TRUE),]
-    
-    
+
     #simperdf6 <-simperdf5[,c(1,6,7,8,10,9)]#a1, name, ava, avb, diff, cusum
     simperdf6 <-simperdf5[,c(1,6,7,8,10,9)]#a1, name, ava, avb, diff, cusum
     
@@ -2097,12 +2095,12 @@ order by s.year desc, st.stationcode asc;",
     anosim.reg2 <- anosim.site()
     #anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05 & anosim.reg2$R >0.1),]
     anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05 & anosim.reg2$R > input$num),]
-    
     anosim.reg3$site.names<-str_trim(anosim.reg3$site.names)
-    
+
     library(dplyr)
     
     ##Now subset SIMPER results for only the sites where ANOSIM p<0.05
+  
     simperdf7 <- simperdf6 %>% filter(Site %in% anosim.reg3$site.names)
     
     return(simperdf7)
