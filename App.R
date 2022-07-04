@@ -33,6 +33,11 @@ library(config)
 #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
 #write.csv(object,'filename.csv', row.names=F)
 #__________________________________________________________________________________________
+#### CODE TO SOLVE ERROR: Warning: Error in s2_geography_from_wkb: Evaluation error: Found 1 feature with invalid spherical geometry. [116] Loop 0 is not valid: Edge 8 is degenerate (duplicate vertex). ####
+## Solution here: https://github.com/r-spatial/sf/issues/1762
+
+sf_use_s2(FALSE)
+#__________________________________________________________________________________________
 #### CODE TO SOLVE ERROR: Missing dbQuoteLiteral methods for pool' ####
 
 ##https://github.com/rstudio/pool/issues/96
