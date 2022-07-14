@@ -2370,7 +2370,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Change error message where no data to plot
     validate(
-      need(data_long2$treatment != "", "No data to plot (tretaments either 'similar' or 'no evidence of change')"))
+      need(data_long2$treatment != "", "No data to plot (treatments either 'similar' or 'no evidence of change')"))
     
     p<-ggplot(data=data_long2, aes(x=sed, y=percentage,fill=percentage<0)) +
       geom_bar(stat="identity")+
