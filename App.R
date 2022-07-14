@@ -933,7 +933,6 @@ order by s.year desc, st.stationcode asc;",
     #stations_in_piz <- st_join(stations_after_ref_removed, piz, join =st_within)
     stations_in_piz <- st_join(stations_after_ref_removed, test.piz(), join =st_within)
     
-    
     stations_in_piz <-  stations_in_piz[,c(1:13,15,16)]
     
     colnames(stations_in_piz)[14] <- "area"
@@ -1084,9 +1083,9 @@ order by s.year desc, st.stationcode asc;",
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
-    ## Perform the NMDS ordination 
+   ## Perform the NMDS ordination 
     set.seed(123)
     ord <- metaMDS(data2,distance="eu",k = 2)
     
@@ -1094,7 +1093,7 @@ order by s.year desc, st.stationcode asc;",
     stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
     
     ## Now we run the envfit function with our environmental data frame, env.
-    en = envfit(ord, env, permutations = 999, na.rm = TRUE)
+    #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
     data.scores = as.data.frame(scores(ord))
@@ -1131,7 +1130,7 @@ order by s.year desc, st.stationcode asc;",
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Perform the NMDS ordination 
     set.seed(123)
@@ -1141,7 +1140,7 @@ order by s.year desc, st.stationcode asc;",
     stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
     
     ## Now we run the envfit function with our environmental data frame, env.
-    en = envfit(ord, env, permutations = 999, na.rm = TRUE)
+    #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
     data.scores = as.data.frame(scores(ord))
@@ -1179,7 +1178,7 @@ order by s.year desc, st.stationcode asc;",
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Perform the NMDS ordination 
     set.seed(123)
@@ -1189,7 +1188,7 @@ order by s.year desc, st.stationcode asc;",
     stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
     
     ## Now we run the envfit function with our environmental data frame, env.
-    en = envfit(ord, env, permutations = 999, na.rm = TRUE)
+    #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
     data.scores = as.data.frame(scores(ord))
@@ -1229,14 +1228,14 @@ order by s.year desc, st.stationcode asc;",
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
-    env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
+    #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
     ## Perform the NMDS ordination 
     set.seed(123)
     ord <- metaMDS(data2,distance="eu",k = 3)
     
     ## Now we run the envfit function with our environmental data frame, env.
-    en = envfit(ord, env, permutations = 999, na.rm = TRUE)
+    #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
     data.scores = as.data.frame(scores(ord))
@@ -1315,7 +1314,7 @@ order by s.year desc, st.stationcode asc;",
       site.use = data[use,c(12,5:11)]
       time.use = site.use$time
       matrix.use = site.use[,2:8]
-      anos = anosim(matrix.use, grouping = time.use)
+      anos = anosim(matrix.use, grouping = time.use, distance = "eu")
       R[j] = anos$statistic
       p[j] = anos$signif
     }
@@ -1386,7 +1385,7 @@ order by s.year desc, st.stationcode asc;",
       site.use = data[use,c(12,5:11)]
       time.use = site.use$time
       matrix.use = site.use[,2:8]
-      anos = anosim(matrix.use, grouping = time.use)
+      anos = anosim(matrix.use, grouping = time.use, distance = "eu")
       R[j] = anos$statistic
       p[j] = anos$signif
     }
@@ -1458,7 +1457,7 @@ order by s.year desc, st.stationcode asc;",
       site.use = data[use,c(12,5:11)]
       time.use = site.use$time
       matrix.use = site.use[,2:8]
-      anos = anosim(matrix.use, grouping = time.use)
+      anos = anosim(matrix.use, grouping = time.use, distance = "eu")
       R[j] = anos$statistic
       p[j] = anos$signif
     }
