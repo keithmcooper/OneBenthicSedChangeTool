@@ -27,6 +27,7 @@ library(DT)
 library(stringr)
 library(vegan)
 library(config)
+library(shinycssloaders)
 #library(geojsonio)
 
 ## For problem solving
@@ -356,38 +357,38 @@ ui <- fluidPage(
                         #### RESULTS TAB: SITE ####
                         tabPanel("Site",
                                  tabsetPanel(
-                                   tabPanel(em("Line Plots"),plotOutput(outputId = "site.line", height = 740)),
-                                   tabPanel(em("Means"),br(),div(DT::dataTableOutput("sedsumsite"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS 2D"),plotOutput(outputId = "nmds.site.piz", height = 740)),
-                                   tabPanel(em("nMDS 3D"),plotlyOutput(outputId = "nmds3dsite", height = 740)),
-                                   tabPanel(em("Anosim"),br(),div(DT::dataTableOutput("anosim.site"),style = 'font-size:85%'),h4(br(),style="color:#808080"),actionButton("update","Show results in map")),
-                                   tabPanel(em("Simper"),br(),div(DT::dataTableOutput("simpertab.site"),style = 'font-size:85%')),
-                                   tabPanel(em("Change"),plotOutput(outputId = "change.site", height = 740))
+                                   tabPanel(em("Line Plots"),withSpinner(plotOutput(outputId = "site.line", height = 740),color='#B4C7E7')),
+                                   tabPanel(em("Means"),br(),div(withSpinner(DT::dataTableOutput("sedsumsite"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("nMDS 2D"),withSpinner(plotOutput(outputId = "nmds.site.piz", height = 740),color='#B4C7E7')),
+                                   tabPanel(em("nMDS 3D"),withSpinner(plotlyOutput(outputId = "nmds3dsite", height = 740),color='#B4C7E7')),
+                                   tabPanel(em("Anosim"),br(),div(withSpinner(DT::dataTableOutput("anosim.site"),color='#B4C7E7'),style = 'font-size:85%'),h4(br(),style="color:#808080"),actionButton("update","Show results in map")),
+                                   tabPanel(em("Simper"),br(),div(withSpinner(DT::dataTableOutput("simpertab.site"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("Change"),withSpinner(plotOutput(outputId = "change.site", height = 740),color='#B4C7E7'))
                                  )#close tabsetPanel
                         ),#close tabPanel "Site"
                         #__________________________________________________________________________________________
                         #### RESULTS TAB: SUB REGION ####
                         tabPanel("Sub-region",
                                  tabsetPanel(
-                                   tabPanel(em("Line Plots"),value= 'subregionTab',plotOutput(outputId = "subreg.line", height = 740)),
-                                   tabPanel(em("Means"),value= 'subregionTab',br(),div(DT::dataTableOutput("sedsumsubreg"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS 2D"),value= 'subregionTab',plotOutput(outputId = "nmds.subreg", height = 740)),
+                                   tabPanel(em("Line Plots"),value= 'subregionTab',withSpinner(plotOutput(outputId = "subreg.line", height = 740),color='#B4C7E7')),
+                                   tabPanel(em("Means"),value= 'subregionTab',br(),div(withSpinner(DT::dataTableOutput("sedsumsubreg"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("nMDS 2D"),value= 'subregionTab',withSpinner(plotOutput(outputId = "nmds.subreg", height = 740),color='#B4C7E7')),
                                    
-                                   tabPanel(em("Anosim"),value= 'subregionTab',br(),div(DT::dataTableOutput("anosim.subreg"),style = 'font-size:85%')),
-                                   tabPanel(em("Simper"),value= 'subregionTab',br(),div(DT::dataTableOutput("simpertab.subreg"),style = 'font-size:85%')),
-                                   tabPanel(em("Change"),value= 'subregionTab',plotOutput(outputId = "change.subreg", height = 740)),id ="tabselected2"
+                                   tabPanel(em("Anosim"),value= 'subregionTab',br(),div(withSpinner(DT::dataTableOutput("anosim.subreg"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("Simper"),value= 'subregionTab',br(),div(withSpinner(DT::dataTableOutput("simpertab.subreg"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("Change"),value= 'subregionTab',withSpinner(plotOutput(outputId = "change.subreg", height = 740),color='#B4C7E7')),id ="tabselected2"
                                  )#close tabsetPanel
                         ),#close tabPanel "Sub-region"
                         #__________________________________________________________________________________________
                         #### RESULTS TAB: REGION ####
                         tabPanel("Region",
                                  tabsetPanel(
-                                   tabPanel(em("Line Plots"),value = 'regionTab',br(),plotOutput(outputId = "reg.line", height = 350)),
-                                   tabPanel(em("Means"),br(),value = 'regionTab',div(DT::dataTableOutput("sedsumreg"),style = 'font-size:85%')),
-                                   tabPanel(em("nMDS 2D"),value = 'regionTab',br(),plotOutput(outputId = "nmds", height = 350)),#750
-                                   tabPanel(em("Anosim"),value = 'regionTab',br(),div(DT::dataTableOutput("anosim"),style = 'font-size:85%')),
-                                   tabPanel(em("Simper"),value = 'regionTab',br(),div(DT::dataTableOutput("simpertab.reg"),style = 'font-size:85%')),
-                                   tabPanel(em("Change"),value = 'regionTab',br(),plotOutput(outputId = "change.reg", height = 740)), id ="tabselected"
+                                   tabPanel(em("Line Plots"),value = 'regionTab',br(),withSpinner(plotOutput(outputId = "reg.line", height = 350),color='#B4C7E7')),
+                                   tabPanel(em("Means"),br(),value = 'regionTab',div(withSpinner(DT::dataTableOutput("sedsumreg"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("nMDS 2D"),value = 'regionTab',br(),withSpinner(plotOutput(outputId = "nmds", height = 350),color='#B4C7E7')),
+                                   tabPanel(em("Anosim"),value = 'regionTab',br(),div(withSpinner(DT::dataTableOutput("anosim"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("Simper"),value = 'regionTab',br(),div(withSpinner(DT::dataTableOutput("simpertab.reg"),color='#B4C7E7'),style = 'font-size:85%')),
+                                   tabPanel(em("Change"),value = 'regionTab',br(),withSpinner(plotOutput(outputId = "change.reg", height = 740),color='#B4C7E7')), id ="tabselected"
                                  )#close tabsetPanel
                         )#close tabPanel "Region"
                         #__________________________________________________________________________________________
