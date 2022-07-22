@@ -320,12 +320,12 @@ ui <- fluidPage(
   fluidRow(
     #### SELECTIONS ####
     column(2,
-           selectInput(inputId="programmeInput",selected = NULL, multiple = F,h4(br(),"Choose sector",style="color:#808080"),choices =c("SAC","AGG","MCZ","R&D","OWF","NONE")),
+           selectInput(inputId="programmeInput",selected = NULL, multiple = F,h4(br(),"Choose sector",style="color:#808080"),choices =c("","SAC","AGG","MCZ","R&D","OWF","NONE")),
            selectInput(inputId="baselineInput", multiple = T,h4(br(),"Select Baseline survey(s)",style="color:#808080"),choices =surveys),
            selectInput(inputId="monitoringInput", multiple = T,h4("Select Monitoring survey(s)",style="color:#808080"),choices =surveys),
            ## Only show array choice where sector is 'AGG'
            conditionalPanel(condition = "input.programmeInput == 'AGG'",
-                            selectInput(inputId="arrayInput", multiple = F,h4(br()," RSMP array",style="color:#808080"),choices =arrays),
+                            selectInput(inputId="arrayInput", multiple = F,h4(br()," RSMP array",style="color:#808080"),choices =c("",arrays)),
                             h4(br(),"Use paired samples only",style="color:#808080"),checkboxInput(inputId = "paired",
                                                                                                    label = "",
                                                                                                    value = FALSE)
