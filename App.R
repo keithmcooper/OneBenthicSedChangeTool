@@ -982,14 +982,14 @@ order by s.year desc, st.stationcode asc;",
     #__________________________________________________________________________________________         
     ## CONTEXT
     ## Where no data create an empty object
-    if(countsiz==countsiz.na){
-      stations_in_context <- stations_in_siz[0,]
-    } else{
+    #if(countsiz==countsiz.na){
+    #  stations_in_context <- stations_in_siz[0,]
+    #} else{
       stations_in_context <- stations_in_siz[is.na(stations_in_siz$area),]
       stations_in_context$area <- "CONTEXT"
       stations_in_context$treatment <- "REF"
       stations_in_context$treatment2 <- paste(stations_in_context$area, "-",stations_in_context$treatment )
-    }
+    #}
     #__________________________________________________________________________________________        
     ## Now joint outputs together
     stations <- rbind(stations_in_piz2,stations_in_ref2,stations_in_siz2,stations_in_context)
@@ -998,7 +998,7 @@ order by s.year desc, st.stationcode asc;",
     st_geometry(stations) <- NULL
     
     stations$treatment <- factor(stations$treatment, levels=c("PIZ","SIZ","REF"))
-    
+    #browser()
     return(stations)
   })
   #__________________________________________________________________________________________       
