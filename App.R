@@ -1097,10 +1097,12 @@ order by s.year desc, st.stationcode asc;",
     #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
-    data.scores = as.data.frame(scores(ord))
+    #data.scores = as.data.frame(scores(ord))
+    data.scores =scores(ord, choices=c(1,2))
     
     ##Bind results of ordination to data (so you have access to factors etc)
-    data.scores2 <- cbind(data,data.scores)
+    #data.scores2 <- cbind(data,data.scores)
+    data.scores2 <- cbind(data,data.scores$sites)
     
     ## Produce plot
     #en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
@@ -1144,10 +1146,12 @@ order by s.year desc, st.stationcode asc;",
     #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
-    data.scores = as.data.frame(scores(ord))
+    #data.scores = as.data.frame(scores(ord))
+    data.scores =scores(ord, choices=c(1,2))
     
     ##Bind results of ordination to data (so you have access to factors etc)
-    data.scores2 <- cbind(data,data.scores)
+    #data.scores2 <- cbind(data,data.scores)
+    data.scores2 <- cbind(data,data.scores$sites)
     
     ## Make a df for your subset with coordinates and time
     #data.scores.site = as.data.frame(data.scores3[,c(17:19,12)])
@@ -1158,7 +1162,7 @@ order by s.year desc, st.stationcode asc;",
     p <-  ggplot(data = data.scores2, aes(x = NMDS1, y = NMDS2, col=time)) + 
       geom_point(data = data.scores2, size = 1.8, alpha =0.6) +
       scale_colour_manual(values = c("blue","#00CCCC"))+
-      annotate(geom="text", x=0.5, y=1, label=paste("Stress=",stress))+
+      #annotate(geom="text", x=0.5, y=1, label=paste("Stress=",stress))+
       facet_wrap(~treatment2)+
       theme(text = element_text(size=11),legend.title = element_blank(), 
             legend.text=element_text(size=11))
@@ -1175,6 +1179,8 @@ order by s.year desc, st.stationcode asc;",
     data <- stations.site()
     data$time <- as.factor(data$time)
     
+    #write.csv(data, "C:\\Users\\KMC00\\OneDrive - CEFAS\\dataangpsa.csv", row.names=FALSE)
+    
     ## Seperate out sieve data for ordination. Make sure values are numeric
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
@@ -1183,7 +1189,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Perform the NMDS ordination 
     set.seed(123)
-    ord <- metaMDS(data2,distance="eu",k = 2)
+    ord <- metaMDS(data2,distance="eu",na.rm = T,autotransform = T,k = 2)
     
     ## Stress
     stress <- format(round(ord$stress, 3), nsmall = 3)  # Apply format function
@@ -1192,11 +1198,13 @@ order by s.year desc, st.stationcode asc;",
     #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
-    data.scores = as.data.frame(scores(ord))
+    #data.scores = as.data.frame(scores(ord))
+    data.scores =scores(ord, choices=c(1,2))
     
     ##Bind results of ordination to data (so you have access to factors etc)
-    data.scores2 <- cbind(data,data.scores)
-    
+    #data.scores2 <- cbind(data,data.scores)
+    data.scores2 <- cbind(data,data.scores$sites)
+ 
     ## Make a df for your subset with coordinates and time
     #data.scores.site = as.data.frame(data.scores3[,c(17:19,12)])
     
@@ -1239,10 +1247,12 @@ order by s.year desc, st.stationcode asc;",
     #en = envfit(ord, env, permutations = 999, na.rm = TRUE)
     
     ## Extract the sample coordinates in the NMDS ordination space
-    data.scores = as.data.frame(scores(ord))
+    #data.scores = as.data.frame(scores(ord))
+    data.scores =scores(ord, choices=c(1,2,3))
     
     ##Bind results of ordination to data (so you have access to factors etc)
-    data.scores2 <- cbind(data,data.scores)
+    #data.scores2 <- cbind(data,data.scores)
+    data.scores2 <- cbind(data,data.scores$sites)
     
     ## Subset data for PIZ
     # data.piz <- data.scores2[which(data.scores2$treatment2=='PIZ'),]#today
@@ -2398,7 +2408,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Change error message where no data to plot
     validate(
-      need(data_long2$treatment != "", "No data to plot (tretaments either 'similar' or 'no evidence of change')"))
+      need(data_long2$treatment != "", "No data to plot (treatments either 'similar' or 'no evidence of change')"))
     
     p<-ggplot(data=data_long2, aes(x=sed, y=percentage,fill=percentage<0)) +
       geom_bar(stat="identity")+
@@ -2426,7 +2436,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Change error message where no data to plot
     validate(
-      need(data_long2$treatment != "", "No data to plot (tretaments either 'similar' or 'no evidence of change')"))
+      need(data_long2$treatment != "", "No data to plot (treatments either 'similar' or 'no evidence of change')"))
     
     p<-ggplot(data=data_long2, aes(x=sed, y=percentage,fill=percentage<0)) +
       geom_bar(stat="identity")+
