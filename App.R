@@ -29,6 +29,8 @@ library(vegan)
 library(config)
 library(shinycssloaders)
 #library(geojsonio)
+library(leaflet.minicharts)
+library(magrittr)
 
 ## For problem solving
 #setwd("C:/Users/kmc00/OneDrive - CEFAS/working")
@@ -346,7 +348,10 @@ ui <- fluidPage(
                         tabPanel("Baseline",br(),div(DT::dataTableOutput("widebas"),style = 'font-size:85%')),
                         tabPanel("Monitoring",br(),div(DT::dataTableOutput("widemon"),style = 'font-size:85%')),
                         tabPanel("All",br(),div(DT::dataTableOutput("wideall"),style = 'font-size:85%')),
-                        tabPanel("All+Treatment",br(),div(DT::dataTableOutput("refst"),style = 'font-size:85%'))
+                        tabPanel("All+Treatment",br(),div(DT::dataTableOutput("refst"),style = 'font-size:85%')),
+                        ###
+                        tabPanel("Pie",leafletOutput("map2",width = "100%", height = 765))
+                        ### 
                       )# close tabsetPanel
              ),#close tabPanel "Data"
              #__________________________________________________________________________________________
@@ -611,6 +616,43 @@ ORDER by ss.survey_surveyname, s.samplecode;",
     DT::datatable(layer, options = list(pageLength = 9),escape=FALSE)
   )
   #__________________________________________________________________________________________  
+  #### PIE CART MAP ####
+  output$map2 <- renderLeaflet({
+    colors = c("#576169","#798187","#929489","#EEE9DE","#EBCEB1","#D0755C","#88352B")
+    ## Basic map
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas,options = providerTileOptions(noWrap = TRUE))%>%
+      addMinicharts(
+        longalltest2()$stationlong, longalltest2()$stationlat,
+        chartdata = select(longalltest2(),cG,mG,fG,cS,mS,fS,SC),
+        type = "pie",
+        time = longalltest2()$time,
+        colorPalette = colors,
+        width = 15, height = 15)%>%
+      
+      addPolygons(data=owf,color = "#444444", weight = 1, smoothFactor = 0.5,group = "owf",popup = paste0("<b>Name: </b>", owf$name_prop, "<br>","<b>Status: </b>", owf$inf_status))%>%
+      addPolygons(data=owf_cab,color = "#444444", weight = 1, smoothFactor = 0.5,group = "owf_cab",popup = paste0("<b>Name: </b>", owf_cab$name_prop, "<br>","<b>Status: </b>", owf_cab$infra_stat))%>%
+      addPolygons(data=R4_chara,color = "#444444", weight = 1, smoothFactor = 0.5,group = "R4_chara",popup = paste0("<b>Name: </b>", R4_chara$name))%>%
+      addPolygons(data=R4_bid,color = "#444444", weight = 1, smoothFactor = 0.5,group = "R4_bid",popup = paste0("<b>Name: </b>", R4_bid$name, "<br>","<b>Status: </b>", R4_bid$bidding_ar))%>%
+      addPolygons(data=siz,color = "#444444", fillOpacity = 0, weight = 1, smoothFactor = 0.5,group = "agg (SIZ)",popup = paste0("<b>SIZ Area: </b>", siz$area))%>%
+      addPolygons(data=ref,color = "#444444", fillOpacity = 0,weight = 1, smoothFactor = 0.5,group = "ref",popup = paste0("<b>Name: </b>", ref$area))%>%
+      addPolygons(data=piz,color = "#444444", fillOpacity = 0,weight = 2, smoothFactor = 0.5,group = "agg (PIZ)",popup = paste0("<b>PIZ Area: </b>", piz$area))%>%
+      addPolygons(data=disp,color = "#444444", weight = 1, smoothFactor = 0.5,group = "disp",popup = paste0("<b>Name: </b>", disp$name_, "<br>","<b>Number: </b>", disp$site_))%>%
+      addPolygons(data=wave,color = "#444444", weight = 1, smoothFactor = 0.5,group = "wave",popup = paste0("<b>Name: </b>", wave$name_prop, "<br>","<b>Status: </b>", wave$inf_status))%>%
+      addPolygons(data=wave_cab,color = "#444444", weight = 1, smoothFactor = 0.5,group = "wave_cab",popup = paste0("<b>Name: </b>", wave_cab$name_prop, "<br>","<b>Status: </b>", wave_cab$infra_stat))%>%
+      addPolygons(data=tidal,color = "#444444", weight = 1, smoothFactor = 0.5,group = "tidal",popup = paste0("<b>Name: </b>", tidal$name_prop, "<br>","<b>Status: </b>", tidal$inf_statUS))%>%
+      addPolygons(data=tidal_cab,color = "#444444", weight = 1, smoothFactor = 0.5,group = "tidal_cab",popup = paste0("<b>Name: </b>", tidal_cab$name_prop, "<br>","<b>Status: </b>", tidal_cab$infra_stat))%>%
+      addPolygons(data=mcz,color = "#444444", weight = 1, smoothFactor = 0.5,group = "mcz",popup = paste0("<b>Name: </b>", mcz$site_name))%>%
+      addPolygons(data=sac,color = "#444444", weight = 1, smoothFactor = 0.5,group = "sac",popup = paste0("<b>Name: </b>", sac$site_name))%>%
+      addPolygons(data=ncmpa,color = "#444444", weight = 1, smoothFactor = 0.5,group = "ncmpa",popup = paste0("<b>Name: </b>", ncmpa$site_name))%>%
+      addPolygons(data=randd,color = "#444444", weight = 5, smoothFactor = 0.5,group = "randd")%>%
+      addPolygons(data=oga,color = "#444444", weight = 1, smoothFactor = 0.5,group = "oga",popup = paste0("<b>Number: </b>", oga$licref, "<br>","<b>Organisation: </b>", oga$licorggrp))%>%
+      addCircleMarkers(data = points,~Longitude,~Latitude,group = "samples",popup = ~paste("<b>Sample Code: </b>",Samplecode, "<br>","<b>Survey: </b>", Survey),radius =0.9,color = "grey",stroke = FALSE, fillOpacity = 0.5)%>%
+      addLayersControl(
+        overlayGroups = c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa","randd","samples"),options = layersControlOptions(collapsed = TRUE))%>%hideGroup(c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa","randd","samples"))%>%
+      setView(-3,54.6,zoom=5.5)
+  })
+  #__________________________________________________________________________________________  
   #### MAP ####
   
   output$map <- renderLeaflet({
@@ -620,7 +662,8 @@ ORDER by ss.survey_surveyname, s.samplecode;",
       
       #addProviderTiles(providers$Esri.OceanBasemap,options = providerTileOptions(noWrap = TRUE))%>%
       addProviderTiles(providers$Esri.WorldGrayCanvas,options = providerTileOptions(noWrap = TRUE))%>%
-      addMouseCoordinates()%>%addLegend(
+      addMouseCoordinates()%>%
+      addLegend(
         position = "topright",
         colors = c("blue","#00CCCC"),# NB have to use hex cols
         labels = c("Baseline","Monitoring"),        
@@ -646,7 +689,7 @@ ORDER by ss.survey_surveyname, s.samplecode;",
       addPolygons(data=oga,color = "#444444", weight = 1, smoothFactor = 0.5,group = "oga",popup = paste0("<b>Number: </b>", oga$licref, "<br>","<b>Organisation: </b>", oga$licorggrp))%>%
       addCircleMarkers(data = points,~Longitude,~Latitude,group = "samples",popup = ~paste("<b>Sample Code: </b>",Samplecode, "<br>","<b>Survey: </b>", Survey),radius =0.9,color = "grey",stroke = FALSE, fillOpacity = 0.5)%>%
       addLayersControl(
-        overlayGroups = c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa","randd","samples"),options = layersControlOptions(collapsed = FALSE))%>%hideGroup(c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa","randd","samples"))%>%
+        overlayGroups = c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa","randd","samples"),options = layersControlOptions(collapsed = TRUE))%>%hideGroup(c("owf","owf_cab","R4_chara","R4_bid","agg (SIZ)","agg (PIZ)","ref","disp","wave","wave_cab","tidal","tidal_cab","oga","mcz","sac","ncmpa","randd","samples"))%>%
       addDrawToolbar(polylineOptions = F, circleOptions = F, markerOptions = F,circleMarkerOptions = F, polygonOptions = F, singleFeature=TRUE)%>%
       setView(-3,54.6,zoom=5.5)
   })
@@ -716,7 +759,9 @@ s.samplecode,
 s.samplelong,
 s.samplelat,
 w.wwacr,
-SUM(sv.percentage) 
+SUM(sv.percentage),
+st.stationlong,
+st.stationlat
 
 FROM 
 samples.sample as s
@@ -784,6 +829,7 @@ order by s.year desc, st.stationcode asc;",
     
     ## Change NA to zero (to allow dor rowsum calculation)
     long3[, 6:12][is.na(long3[, 6:12])] <- 0
+    #write.csv(long3, "C:\\Users\\kmc00\\OneDrive - CEFAS\\working\\long.csv", row.names=FALSE)
     return(long3)
   })
   #_________________________________________________________________________________________  
@@ -797,7 +843,7 @@ order by s.year desc, st.stationcode asc;",
     
     ##Change NA to zero (to allow dor rowsum calculation)
     longmon3[, 6:12][is.na(longmon3[, 6:12])] <- 0
-    
+    #write.csv(longmon3, "C:\\Users\\kmc00\\OneDrive - CEFAS\\working\\mon.csv", row.names=FALSE)
     return(longmon3)
   })
   #_________________________________________________________________________________________ 
@@ -848,6 +894,27 @@ order by s.year desc, st.stationcode asc;",
     return(df3)
     
   })
+  
+  longalltest2 <- reactive({
+    
+    df2<- longall() %>% 
+      filter(if (input$paired == TRUE) match == TRUE else !is.na(match))
+    #_________________________________________________________________________________________
+    #### DATA FOR USE WITH PIE CHARTS (DATA) ####
+    df3 <- df2[,1:13]
+    stcoord <- distinct(coord()[,c(2,9,10)])
+    names(stcoord)
+    #colnames(stcoord) <- c("stationcode","samplelong","samplelat")
+    #browser()
+    names(df3)
+    #df4 <-  merge(df3, stcoord, by="stationcode", all = T)
+    library(dplyr)
+    df4 <- left_join(df3,stcoord, by="stationcode")
+    df5 <- df4[,c(2,13:14,15,6:12)]
+    #browser()
+    return(df5)
+    
+  })
   #_________________________________________________________________________________________  
   #### ALL DATA: TABLE ####
   
@@ -875,7 +942,7 @@ order by s.year desc, st.stationcode asc;",
                        ~samplelong,
                        ~samplelat,
                        group = "myMarkers3",
-                       popup = ~paste("<b>Sample Code: </b>",samplecode),
+                       popup = ~paste("<b>Sample Code: </b>",samplecode,'<br>',"<b>Station Code: </b>",stationcode),
                        radius =3.5,
                        color = "blue",
                        stroke = FALSE, fillOpacity = 1)%>%
@@ -885,10 +952,12 @@ order by s.year desc, st.stationcode asc;",
                        ~samplelong,
                        ~samplelat,
                        group = "myMarkers4",
-                       popup = ~paste("<b>Sample Code: </b>",samplecode),
+                       popup = ~paste("<b>Sample Code: </b>",samplecode,'<br>',"<b>Station Code: </b>",stationcode),
                        radius =2,
                        color = "#00CCCC",
                        stroke = FALSE, fillOpacity = 1)
+    
+    ###############
   })
   #__________________________________________________________________________________________
   #### ASSIGN SAMPLES TO TREATMENT GROUPS ####
@@ -985,10 +1054,10 @@ order by s.year desc, st.stationcode asc;",
     #if(countsiz==countsiz.na){
     #  stations_in_context <- stations_in_siz[0,]
     #} else{
-      stations_in_context <- stations_in_siz[is.na(stations_in_siz$area),]
-      stations_in_context$area <- "CONTEXT"
-      stations_in_context$treatment <- "REF"
-      stations_in_context$treatment2 <- paste(stations_in_context$area, "-",stations_in_context$treatment )
+    stations_in_context <- stations_in_siz[is.na(stations_in_siz$area),]
+    stations_in_context$area <- "CONTEXT"
+    stations_in_context$treatment <- "REF"
+    stations_in_context$treatment2 <- paste(stations_in_context$area, "-",stations_in_context$treatment )
     #}
     #__________________________________________________________________________________________        
     ## Now joint outputs together
@@ -1086,7 +1155,7 @@ order by s.year desc, st.stationcode asc;",
     ## Seperate out env data (Wentworth - for overlay) for ordination. Make sure values are numeric
     #env = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
     
-   ## Perform the NMDS ordination 
+    ## Perform the NMDS ordination 
     set.seed(123)
     ord <- metaMDS(data2,distance="eu",k = 2)
     
@@ -1204,7 +1273,7 @@ order by s.year desc, st.stationcode asc;",
     ##Bind results of ordination to data (so you have access to factors etc)
     #data.scores2 <- cbind(data,data.scores)
     data.scores2 <- cbind(data,data.scores$sites)
- 
+    
     ## Make a df for your subset with coordinates and time
     #data.scores.site = as.data.frame(data.scores3[,c(17:19,12)])
     
@@ -1372,7 +1441,7 @@ order by s.year desc, st.stationcode asc;",
     ## Pick off site variable
     site = as.character(data$treatment2)
     freqs = data.frame(table(site))
-
+    
     ## Remove sites with only one before and after sample
     freqs.big = freqs[which(freqs$Freq>=2.5),]
     
@@ -1701,7 +1770,7 @@ order by s.year desc, st.stationcode asc;",
     #anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05& anosim.reg2$R >0.1),]
     anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05 & anosim.reg2$R > input$num),]
     anosim.reg3$site.names<-str_trim(anosim.reg3$site.names)
-   
+    
     
     library(dplyr)
     
@@ -1710,7 +1779,7 @@ order by s.year desc, st.stationcode asc;",
     
     return(simperdf7)
   })
-   #__________________________________________________________________________________________
+  #__________________________________________________________________________________________
   #### SUBREGION: SIMPER ####
   
   simper.subreg <- reactive({
@@ -1923,11 +1992,11 @@ order by s.year desc, st.stationcode asc;",
     #### region ####
     ## Start with data in object 'stations4' from STEP 10.
     data <- stations.site()
-     
+    
     data$time <- as.factor(data$time)
     ## Seperate out sieve data for ordination. Make sure values are numeric
     data2 = as.data.frame(sapply(data[,c(11,8,10,6,7,9,5)], as.numeric))
-   
+    
     
     ## SIMPER function (euclidean distance)
     #https://stackoverflow.com/questions/35773571/r-vegan-simper-analysis-modify-distance-matrix
@@ -2091,11 +2160,11 @@ order by s.year desc, st.stationcode asc;",
     simperdf2<-separate(data = simperdf, col = left, into = c("a", "b"), sep = "\\_")#seperate contrasts names
     simperdf3<-separate(data = simperdf2, col = a, into = c("a1", "a2"), sep = "\\$")#\\-
     simperdf4<-separate(data = simperdf3, col = b, into = c("b1", "b2"), sep = "\\$")#\\-
-
+    
     simperdf4$match <- ifelse(simperdf4$a1 == simperdf4$b1, TRUE, FALSE)
     
     simperdf5 <- simperdf4[which(simperdf4$match==TRUE),]
-
+    
     #simperdf6 <-simperdf5[,c(1,6,7,8,10,9)]#a1, name, ava, avb, diff, cusum
     simperdf6 <-simperdf5[,c(1,6,7,8,10,9)]#a1, name, ava, avb, diff, cusum
     
@@ -2111,11 +2180,11 @@ order by s.year desc, st.stationcode asc;",
     #anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05 & anosim.reg2$R >0.1),]
     anosim.reg3 <- anosim.reg2[which(anosim.reg2$p < 0.05 & anosim.reg2$R > input$num),]
     anosim.reg3$site.names<-str_trim(anosim.reg3$site.names)
-
+    
     library(dplyr)
     
     ##Now subset SIMPER results for only the sites where ANOSIM p<0.05
-  
+    
     simperdf7 <- simperdf6 %>% filter(Site %in% anosim.reg3$site.names)
     
     return(simperdf7)
