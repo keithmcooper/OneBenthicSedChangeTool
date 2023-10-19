@@ -350,7 +350,7 @@ ui <- fluidPage(
                         tabPanel("All",br(),div(DT::dataTableOutput("wideall"),style = 'font-size:85%')),
                         tabPanel("All+Treatment",br(),div(DT::dataTableOutput("refst"),style = 'font-size:85%')),
                         ###
-                        tabPanel("Pie",leafletOutput("map2",width = "100%", height = 765))
+                        tabPanel("Pie",withSpinner(leafletOutput("map2",width = "100%", height = 765)))
                         ### 
                       )# close tabsetPanel
              ),#close tabPanel "Data"
