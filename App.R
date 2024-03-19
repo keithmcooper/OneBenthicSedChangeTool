@@ -2219,8 +2219,8 @@ order by s.year desc, st.stationcode asc;",
   #__________________________________________________________________________________________
   #### REGION: MEANS DATA #### 
   sed.sum.reg <- reactive({ 
-    sumdata=stations.reg()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
-      group_by(surveyname,treatment) %>%
+    sumdata=stations.reg()[c(12,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
+      group_by(time,treatment) %>%
       summarise(
         count = n(),
         SC = mean(SC, na.rm = TRUE),  
@@ -2238,9 +2238,9 @@ order by s.year desc, st.stationcode asc;",
   #__________________________________________________________________________________________
   #### SUBREGION: MEANS DATA #### 
   sed.sum.subreg <- reactive({ 
-    sumdata=stations.subreg()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
+    sumdata=stations.subreg()[c(12,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
       
-      group_by(surveyname,treatment2) %>%
+      group_by(time,treatment2) %>%
       summarise(
         count = n(),
         SC = mean(SC, na.rm = TRUE),  
@@ -2259,8 +2259,8 @@ order by s.year desc, st.stationcode asc;",
   #### SITE: MEANS DATA #### 
   
   sed.sum.site <- reactive({ 
-    sumdata=stations.site()[c(4,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
-      group_by(surveyname,treatment2) %>%
+    sumdata=stations.site()[c(12,15,16,14,as.numeric(5:11))]%>%#surveyname, treatment,treatment2,area,SC,fs,ms,cs,fg,mg,cg
+      group_by(time,treatment2) %>%
       summarise(
         count = n(),
         SC = mean(SC, na.rm = TRUE),  
@@ -2273,28 +2273,28 @@ order by s.year desc, st.stationcode asc;",
     
     ## Order by treatment and area
     sumdata2 <- sumdata[order(sumdata$treatment2 ),]
-    
+    #browser()
     return(sumdata2)
   })
   #__________________________________________________________________________________________
   #### REGION: MEANS DATA TABLE ####      
   
   output$sedsumreg <- DT::renderDataTable({
-    DT::datatable(sed.sum.reg(),colnames=c("Survey","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
+    DT::datatable(sed.sum.reg(),colnames=c("Time","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
   })
   
   #__________________________________________________________________________________________
   #### SUBEGION: MEANS DATA TABLE ####      
   
   output$sedsumsubreg <- DT::renderDataTable({
-    DT::datatable(sed.sum.subreg(), colnames=c("Survey","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
+    DT::datatable(sed.sum.subreg(), colnames=c("Time","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"),options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
   })
   
   #__________________________________________________________________________________________ 
   #### SITE: MEANS DATA TABLE ####     
   
   output$sedsumsite <- DT::renderDataTable({
-    DT::datatable(sed.sum.site(),colnames=c("Survey","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
+    DT::datatable(sed.sum.site(),colnames=c("Time","Treatment2","Count","SC","fS","mS","cS","fG","mG","cG"), options = list(pageLength = 12))%>%formatRound(columns=c('SC','fS','mS','cS','fG','mG','cG'), digits=1)
   })
   
   #__________________________________________________________________________________________
